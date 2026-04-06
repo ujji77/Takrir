@@ -14,6 +14,7 @@ import { useAudioFiles } from '../src/hooks/useAudioFiles';
 import { useRecitations } from '../src/hooks/useRecitations';
 import { useSettingsStore } from '../src/store/settings';
 import { usePlaylistStore } from '../src/store/playlist';
+import { buildPlaylistItems } from '../src/utils/buildPlaylistItems';
 
 export default function PlaylistScreen() {
   const router = useRouter();
@@ -37,16 +38,16 @@ export default function PlaylistScreen() {
     [recitations, recitationId],
   );
 
+  const filteredVerses = useMemo(
+    () => verses?.filter((v) => v.verse_number >= fromVerse && v.verse_number <= toVerse) ?? [],
+    [verses, fromVerse, toVerse],
+  );
+
   const audioMap = useMemo(() => {
     const map = new Map<string, string>();
     audioFiles?.forEach((f) => map.set(f.verse_key, f.url));
     return map;
   }, [audioFiles]);
-
-  const filteredVerses = useMemo(
-    () => verses?.filter((v) => v.verse_number >= fromVerse && v.verse_number <= toVerse) ?? [],
-    [verses, fromVerse, toVerse],
-  );
 
   const setRepeat = (verseKey: string, delta: number) => {
     setRepeatCounts((prev) => ({
@@ -56,12 +57,13 @@ export default function PlaylistScreen() {
   };
 
   const handlePlay = () => {
-    const playlistItems = filteredVerses.map((verse) => ({
-      verseKey: verse.verse_key,
-      url: audioMap.get(verse.verse_key) ?? '',
-      textUthmani: verse.text_uthmani,
-      repeatCount: repeatCounts[verse.verse_key] ?? 1,
-    }));
+    const playlistItems = buildPlaylistItems(
+      verses ?? [],
+      audioFiles ?? [],
+      fromVerse,
+      toVerse,
+      repeatCounts,
+    );
     loadPlaylist(playlistItems).then(() => router.push('/player'));
   };
 

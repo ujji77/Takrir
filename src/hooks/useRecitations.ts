@@ -6,6 +6,5 @@ export function useRecitations() {
     queryKey: ['recitations'],
     queryFn: fetchRecitations,
     staleTime: Infinity,
-    gcTime: Infinity,
   });
 }
