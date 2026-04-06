@@ -11,7 +11,7 @@ export const FONT_SCALE_VALUES: Record<FontScale, number> = { S: 2, M: 4, L: 7, 
 export const FONT_SCALE_SIZES: Record<FontScale, number> = { S: 22, M: 28, L: 36, XL: 44 };
 export const FONT_SCALES: FontScale[] = ['S', 'M', 'L', 'XL'];
 export const QURAN_FONTS: QuranFont[] = ['text_uthmani', 'text_indopak'];
-export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+export const PLAYBACK_RATES = [0.5, 1, 1.5, 2] as const;
 
 /** Curated reciter IDs pre-fetched so the user can switch live during playback. */
 export const SUPPORTED_RECITATION_IDS = [7, 9, 1, 2] as const;

@@ -33,11 +33,13 @@ export class ExpoAdapter implements AudioPort {
       if (status.didJustFinish) this.finishCb?.();
     });
 
-    player.play();
-
+    // Call setPlaybackRate before play() so currentRate is set on the native player.
+    // play() reads currentRate and calls playImmediately(atRate: currentRate),
+    // which is the correct path for rates > 1x — no isPlaying state needed.
     if (rate !== 1) {
       player.setPlaybackRate(rate);
     }
+    player.play();
 
     this.player = player;
   }
