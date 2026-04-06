@@ -21,6 +21,7 @@ import {
   SkipForward,
   Play,
   Pause,
+  Repeat,
 } from 'phosphor-react-native';
 import { usePlaylistStore } from '../src/store/playlist';
 import {
@@ -52,6 +53,8 @@ export default function PlayerScreen() {
   const skipTo = usePlaylistStore((s) => s.skipTo);
   const applyPlaybackRate = usePlaylistStore((s) => s.applyPlaybackRate);
   const stopAndReset = usePlaylistStore((s) => s.stopAndReset);
+  const repeatPlaylist = usePlaylistStore((s) => s.repeatPlaylist);
+  const toggleRepeatPlaylist = usePlaylistStore((s) => s.toggleRepeatPlaylist);
 
   const showArabic = useSettingsStore((s) => s.showArabic);
   const quranFont = useSettingsStore((s) => s.quranFont);
@@ -132,7 +135,11 @@ export default function PlayerScreen() {
         contentContainerStyle={styles.verseScroll}
       >
         <View style={styles.verseArea}>
-          <Text style={styles.verseKey}>{currentItem.verseKey}</Text>
+          <Text style={styles.verseKey}>
+            {currentItem.verseKey}
+            <Text style={styles.verseKeyPipe}>{' | '}</Text>
+            Repeat: {currentRepeat + 1}x
+          </Text>
           {showArabic && (
             <Text
               style={[
@@ -148,66 +155,43 @@ export default function PlayerScreen() {
 
       {/* Controls card — anchored to bottom */}
       <View style={[styles.card, { paddingBottom: insets.bottom + 30 }]}>
-          {/* Playback controls + repeat badge */}
+          {/* Playback controls */}
           <View style={styles.controlsRow}>
-            {/* Speed — mirrors repeat badge on the left */}
             <TouchableOpacity
-              onPress={() => {
-                const idx = PLAYBACK_RATES.indexOf(playbackRate as typeof PLAYBACK_RATES[number]);
-                const next = PLAYBACK_RATES[(idx + 1) % PLAYBACK_RATES.length];
-                setPlaybackRate(next);
-                applyPlaybackRate(next);
-              }}
+              onPress={() => skipTo(currentIndex - 1)}
+              disabled={currentIndex === 0}
               hitSlop={12}
-              style={styles.repeatBadge}
             >
-              <Text style={styles.repeatNum}>{playbackRate}</Text>
-              <Text style={styles.repeatX}>×</Text>
+              <SkipBack
+                size={26}
+                color={APP_PRIMARY}
+                weight="fill"
+                style={currentIndex === 0 ? styles.dimmed : undefined}
+              />
             </TouchableOpacity>
 
-            <View style={styles.playbackControls}>
-              <TouchableOpacity
-                onPress={() => skipTo(currentIndex - 1)}
-                disabled={currentIndex === 0}
-                hitSlop={12}
-              >
-                <SkipBack
-                  size={26}
-                  color={APP_PRIMARY}
-                  weight="fill"
-                  style={currentIndex === 0 ? styles.dimmed : undefined}
-                />
-              </TouchableOpacity>
+            <TouchableOpacity style={styles.playBtn} onPress={togglePlay} activeOpacity={0.8}>
+              {isPlaying
+                ? <Pause size={36} color="#fff" weight="fill" />
+                : <Play size={36} color="#fff" weight="fill" style={{ marginLeft: 4 }} />
+              }
+            </TouchableOpacity>
 
-              <TouchableOpacity style={styles.playBtn} onPress={togglePlay} activeOpacity={0.8}>
-                {isPlaying
-                  ? <Pause size={36} color="#fff" weight="fill" />
-                  : <Play size={36} color="#fff" weight="fill" style={{ marginLeft: 4 }} />
-                }
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => skipTo(currentIndex + 1)}
-                disabled={currentIndex === items.length - 1}
-                hitSlop={12}
-              >
-                <SkipForward
-                  size={26}
-                  color={APP_PRIMARY}
-                  weight="fill"
-                  style={currentIndex === items.length - 1 ? styles.dimmed : undefined}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Repeat counter */}
-            <View style={styles.repeatBadge}>
-              <Text style={styles.repeatNum}>{currentRepeat + 1}</Text>
-              <Text style={styles.repeatX}>×</Text>
-            </View>
+            <TouchableOpacity
+              onPress={() => skipTo(currentIndex + 1)}
+              disabled={currentIndex === items.length - 1}
+              hitSlop={12}
+            >
+              <SkipForward
+                size={26}
+                color={APP_PRIMARY}
+                weight="fill"
+                style={currentIndex === items.length - 1 ? styles.dimmed : undefined}
+              />
+            </TouchableOpacity>
           </View>
 
-          {/* Icon bar: eye + translation toggle | playlist */}
+          {/* Icon bar */}
           <View style={styles.iconBar}>
             <View style={styles.iconBarLeft}>
               <TouchableOpacity onPress={() => setShowArabic(!showArabic)} hitSlop={10}>
@@ -235,6 +219,24 @@ export default function PlayerScreen() {
                 hitSlop={10}
               >
                 <Translate size={24} color={APP_PRIMARY} />
+              </TouchableOpacity>
+
+              {/* Speed toggle */}
+              <TouchableOpacity
+                onPress={() => {
+                  const idx = PLAYBACK_RATES.indexOf(playbackRate as typeof PLAYBACK_RATES[number]);
+                  const next = PLAYBACK_RATES[(idx + 1) % PLAYBACK_RATES.length];
+                  setPlaybackRate(next);
+                  applyPlaybackRate(next);
+                }}
+                hitSlop={10}
+                style={styles.speedBadge}
+              >
+                <Text style={styles.speedText}>{playbackRate}×</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={toggleRepeatPlaylist} hitSlop={10}>
+                <Repeat size={24} color={APP_PRIMARY} opacity={repeatPlaylist ? 1 : 0.35} />
               </TouchableOpacity>
             </View>
 
@@ -365,6 +367,9 @@ const styles = StyleSheet.create({
     color: APP_PRIMARY,
     textAlign: 'center',
   },
+  verseKeyPipe: {
+    color: '#bbb',
+  },
   arabicText: {
     color: '#333',
     textAlign: 'center',
@@ -389,11 +394,7 @@ const styles = StyleSheet.create({
   controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  playbackControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'center',
     gap: 43,
   },
   dimmed: { opacity: 0.3 },
@@ -405,14 +406,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  repeatBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  repeatNum: { fontSize: 16, color: APP_PRIMARY },
-  repeatX: { fontSize: 16, color: APP_PRIMARY },
-
   // Icon bar
   iconBar: {
     flexDirection: 'row',
@@ -423,6 +416,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 20,
+  },
+  speedBadge: {
+    paddingHorizontal: 4,
+  },
+  speedText: {
+    fontSize: 16,
+    color: APP_PRIMARY,
+    fontWeight: '600',
   },
 
   // Reciter section — inside the card

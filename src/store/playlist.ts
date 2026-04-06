@@ -20,12 +20,14 @@ interface PlaylistState {
   currentIndex: number;
   currentRepeat: number;
   isPlaying: boolean;
+  repeatPlaylist: boolean;
 
   loadPlaylist: (items: PlaylistItem[]) => Promise<void>;
   advance: () => Promise<void>;
   togglePlay: () => void;
   skipTo: (index: number) => Promise<void>;
   applyPlaybackRate: (rate: number) => void;
+  toggleRepeatPlaylist: () => void;
   stopAndReset: () => void;
 }
 
@@ -62,6 +64,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
       currentIndex: 0,
       currentRepeat: 0,
       isPlaying: false,
+      repeatPlaylist: false,
 
       loadPlaylist: async (items) => {
         if (items.length === 0) return;
@@ -86,10 +89,18 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
         } else {
           const nextIndex = currentIndex + 1;
           if (nextIndex >= items.length) {
-            audio.stop();
-            unsubFinish?.();
-            unsubFinish = null;
-            set({ isPlaying: false, currentIndex: 0, currentRepeat: 0 });
+            if (get().repeatPlaylist && items.length > 0) {
+              const firstUrl = resolveUrl(items[0]);
+              if (!firstUrl) return;
+              await audio.play(firstUrl, rate);
+              subscribeFinish();
+              set({ currentIndex: 0, currentRepeat: 0, isPlaying: true });
+            } else {
+              audio.stop();
+              unsubFinish?.();
+              unsubFinish = null;
+              set({ isPlaying: false, currentIndex: 0, currentRepeat: 0 });
+            }
             return;
           }
           await audio.play(resolveUrl(items[nextIndex]), rate);
@@ -122,6 +133,10 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
 
       applyPlaybackRate: (rate) => {
         audio.setRate(rate);
+      },
+
+      toggleRepeatPlaylist: () => {
+        set((s) => ({ repeatPlaylist: !s.repeatPlaylist }));
       },
 
       stopAndReset: () => {
