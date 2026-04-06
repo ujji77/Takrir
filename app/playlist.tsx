@@ -4,17 +4,22 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  Button,
-  ActivityIndicator,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Image } from 'react-native';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useVersesByChapter } from '../src/hooks/useVersesByChapter';
 import { useAudioFiles } from '../src/hooks/useAudioFiles';
-import { useRecitations } from '../src/hooks/useRecitations';
 import { useSettingsStore } from '../src/store/settings';
 import { usePlaylistStore } from '../src/store/playlist';
+import { useChapters } from '../src/hooks/useChapters';
 import { buildPlaylistItems } from '../src/utils/buildPlaylistItems';
+import PlaylistHeader from '../src/components/PlaylistHeader';
+
+const TEAL = '#00cbbf';
+const BISMILLAH_EN = 'In the Name of Allah\nthe Most Compassionate, Most Merciful';
+const bismillahImg = require('../assets/bismillah.png');
 
 export default function PlaylistScreen() {
   const router = useRouter();
@@ -24,18 +29,16 @@ export default function PlaylistScreen() {
   const toVerse = parseInt(params.to, 10);
 
   const recitationId = useSettingsStore((s) => s.recitationId);
-  const { data: recitations } = useRecitations();
+  const { data: chapters } = useChapters();
   const { data: verses, isLoading: versesLoading } = useVersesByChapter(chapterNumber);
   const { data: audioFiles, isLoading: audioLoading } = useAudioFiles(chapterNumber, recitationId);
 
-  // Repeat counts live in local state: verseKey → count
   const [repeatCounts, setRepeatCounts] = useState<Record<string, number>>({});
-
   const loadPlaylist = usePlaylistStore((s) => s.loadPlaylist);
 
-  const currentRecitation = useMemo(
-    () => recitations?.find((r) => r.id === recitationId),
-    [recitations, recitationId],
+  const chapter = useMemo(
+    () => chapters?.find((c) => c.id === chapterNumber),
+    [chapters, chapterNumber],
   );
 
   const filteredVerses = useMemo(
@@ -49,7 +52,6 @@ export default function PlaylistScreen() {
     return map;
   }, [audioFiles]);
 
-  // audioMap is kept for the "has audio" indicator in the UI
   const setRepeat = (verseKey: string, delta: number) => {
     setRepeatCounts((prev) => ({
       ...prev,
@@ -68,106 +70,219 @@ export default function PlaylistScreen() {
     loadPlaylist(playlistItems).then(() => router.push('/player'));
   };
 
-  const isLoading = versesLoading || audioLoading;
-
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator />
-        <Text style={styles.loadingText}>Loading verses & audio…</Text>
-      </View>
-    );
-  }
-
-  const totalPlays = filteredVerses.reduce(
-    (sum, v) => sum + (repeatCounts[v.verse_key] ?? 1),
-    0,
-  );
   const allHaveAudio = filteredVerses.every((v) => audioMap.has(v.verse_key));
+  const canPlay = allHaveAudio && filteredVerses.length > 0;
 
   return (
     <View style={styles.container}>
-      <View style={styles.reciterRow}>
-        <Text style={styles.reciterText}>
-          {currentRecitation
-            ? `${currentRecitation.reciter_name}${currentRecitation.style ? ` · ${currentRecitation.style}` : ''}`
-            : `Recitation ID ${recitationId}`}
-        </Text>
-      </View>
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <FlatList
-        data={filteredVerses}
-        keyExtractor={(item) => item.verse_key}
-        style={styles.list}
-        renderItem={({ item }) => {
-          const count = repeatCounts[item.verse_key] ?? 1;
-          const hasAudio = audioMap.has(item.verse_key);
-          return (
-            <View style={styles.verseRow}>
-              <View style={styles.verseInfo}>
-                <Text style={styles.verseKey}>{item.verse_key}</Text>
-                <Text style={styles.verseText} numberOfLines={2}>{item.text_uthmani}</Text>
-                {!hasAudio && <Text style={styles.noAudio}>⚠ No audio</Text>}
-              </View>
-              <View style={styles.repeatControl}>
-                <TouchableOpacity onPress={() => setRepeat(item.verse_key, -1)} style={styles.repeatBtn}>
-                  <Text style={styles.repeatBtnText}>−</Text>
-                </TouchableOpacity>
-                <Text style={styles.repeatCount}>{count}×</Text>
-                <TouchableOpacity onPress={() => setRepeat(item.verse_key, 1)} style={styles.repeatBtn}>
-                  <Text style={styles.repeatBtnText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        }}
+      <PlaylistHeader
+        chapterName={chapter?.name_simple ?? `Ch. ${chapterNumber}`}
+        fromVerse={fromVerse}
+        toVerse={toVerse}
+        onBack={() => router.back()}
       />
 
-      <View style={styles.footer}>
-        <Text style={styles.footerSummary}>
-          {filteredVerses.length} verse{filteredVerses.length !== 1 ? 's' : ''} · {totalPlays} total plays
-        </Text>
-        <Button title="Play" onPress={handlePlay} disabled={!allHaveAudio || filteredVerses.length === 0} />
+      {versesLoading || audioLoading ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={TEAL} size="large" />
+          <Text style={styles.loadingText}>Loading verses & audio…</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredVerses}
+          keyExtractor={(item) => item.verse_key}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.bismillahBlock}>
+              <Image
+                source={bismillahImg}
+                style={styles.bismillahImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.bismillahEn}>{BISMILLAH_EN}</Text>
+            </View>
+          }
+          ItemSeparatorComponent={() => <View style={styles.divider} />}
+          renderItem={({ item }) => {
+            const count = repeatCounts[item.verse_key] ?? 1;
+            const translation = item.translations?.[0]?.text?.replace(/<[^>]+>/g, '') ?? '';
+            return (
+              <View style={styles.verseRow}>
+                {/* Col 1: verse number */}
+                <Text style={styles.verseNumber}>{item.verse_key}</Text>
+
+                {/* Col 2: Arabic + translation */}
+                <View style={styles.verseContent}>
+                  <Text style={styles.arabicText}>{item.text_uthmani}</Text>
+                  {translation ? (
+                    <Text style={styles.translationText}>{translation}</Text>
+                  ) : null}
+                </View>
+
+                {/* Col 3: repeat counter */}
+                <View style={styles.repeater}>
+                  <TouchableOpacity
+                    onPress={() => setRepeat(item.verse_key, 1)}
+                    hitSlop={10}
+                    style={styles.arrowBtn}
+                  >
+                    <Text style={styles.arrowText}>↑</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.repeatCount}>x {count}</Text>
+                  <TouchableOpacity
+                    onPress={() => setRepeat(item.verse_key, -1)}
+                    hitSlop={10}
+                    style={styles.arrowBtn}
+                  >
+                    <Text style={styles.arrowText}>↓</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }}
+        />
+      )}
+
+      {/* Floating play button */}
+      <View style={styles.playWrap} pointerEvents="box-none">
+        <TouchableOpacity
+          style={[styles.playButton, !canPlay && styles.playButtonDisabled]}
+          onPress={handlePlay}
+          disabled={!canPlay}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.playIcon}>▶</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 },
-  loadingText: { fontSize: 14, color: '#888' },
-  reciterRow: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+  container: {
+    flex: 1,
     backgroundColor: '#fafafa',
   },
-  reciterText: { fontSize: 13, color: '#555' },
-  list: { flex: 1 },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#888',
+  },
+
+  // Bismillah
+  bismillahBlock: {
+    alignItems: 'center',
+    gap: 14,
+    paddingBottom: 24,
+  },
+  bismillahImage: {
+    width: 128,
+    height: 32,
+    opacity: 0.9,
+  },
+  bismillahEn: {
+    fontSize: 12,
+    color: '#333',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+
+  // List
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 120,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 20,
+  },
+
+  // Verse row
   verseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    gap: 12,
   },
-  verseInfo: { flex: 1, marginRight: 12 },
-  verseKey: { fontSize: 12, color: '#888', marginBottom: 2 },
-  verseText: { fontSize: 16, textAlign: 'right' },
-  noAudio: { fontSize: 11, color: '#e74c3c', marginTop: 2 },
-  repeatControl: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  repeatBtn: {
-    width: 32,
-    height: 32,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
+  verseNumber: {
+    fontSize: 14,
+    color: TEAL,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    width: 36,
+    textAlign: 'center',
+  },
+  verseContent: {
+    flex: 1,
+    gap: 12,
+  },
+  arabicText: {
+    fontSize: 18,
+    color: '#333',
+    textAlign: 'right',
+    lineHeight: 36,
+  },
+  translationText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 22,
+  },
+
+  // Repeater
+  repeater: {
+    width: 45,
+    alignItems: 'center',
+    gap: 5,
+  },
+  arrowBtn: {
+    alignItems: 'center',
     justifyContent: 'center',
+  },
+  arrowText: {
+    fontSize: 20,
+    color: TEAL,
+  },
+  repeatCount: {
+    fontSize: 14,
+    color: '#3a3a3a',
+    textAlign: 'center',
+  },
+
+  // Play button
+  playWrap: {
+    position: 'absolute',
+    bottom: 32,
+    left: 0,
+    right: 0,
     alignItems: 'center',
   },
-  repeatBtnText: { fontSize: 20, lineHeight: 24 },
-  repeatCount: { fontSize: 16, fontWeight: '600', minWidth: 28, textAlign: 'center' },
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#ddd', gap: 8 },
-  footerSummary: { fontSize: 13, color: '#666', textAlign: 'center' },
+  playButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: TEAL,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  playButtonDisabled: {
+    backgroundColor: '#a0e8e4',
+  },
+  playIcon: {
+    fontSize: 22,
+    color: '#fff',
+    marginLeft: 3,
+  },
 });
