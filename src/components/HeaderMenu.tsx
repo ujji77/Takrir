@@ -1,0 +1,116 @@
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  Linking,
+  StyleSheet,
+  Pressable,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { DotsThree } from 'phosphor-react-native';
+import { useAuthStore } from '../store/auth';
+
+const PRIVACY_POLICY_URL = 'https://quran.com/privacy';
+const TERMS_URL = 'https://quran.com/terms';
+
+const TEAL = '#00cbbf';
+
+export default function HeaderMenu() {
+  const [visible, setVisible] = useState(false);
+  const router = useRouter();
+  const token = useAuthStore((s) => s.token);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+
+  const isLoggedIn = !!token;
+
+  const handleLogout = () => {
+    setVisible(false);
+    clearAuth();
+    router.replace('/');
+  };
+
+  return (
+    <View>
+      <TouchableOpacity onPress={() => setVisible(true)} hitSlop={12} style={styles.dotsBtn}>
+        <DotsThree size={24} color={TEAL} weight="bold" />
+      </TouchableOpacity>
+
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setVisible(false)}>
+          <View style={styles.menu} onStartShouldSetResponder={() => true}>
+            {isLoggedIn && (
+              <>
+                <TouchableOpacity style={styles.menuItem} onPress={handleLogout} activeOpacity={0.7}>
+                  <Text style={styles.menuItemText}>Logout</Text>
+                </TouchableOpacity>
+                <View style={styles.divider} />
+              </>
+            )}
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => { setVisible(false); Linking.openURL(PRIVACY_POLICY_URL); }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.menuItemText}>Privacy Policy</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => { setVisible(false); Linking.openURL(TERMS_URL); }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.menuItemText}>Terms of Service</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  dotsBtn: {
+    minWidth: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backdrop: {
+    flex: 1,
+  },
+  menu: {
+    position: 'absolute',
+    top: 107,
+    right: 16,
+    width: 185,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  menuItem: {
+    paddingVertical: 12,
+  },
+  menuItemText: {
+    fontSize: 15,
+    color: '#111',
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#e0e0e0',
+  },
+});

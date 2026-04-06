@@ -13,7 +13,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Eye,
   EyeSlash,
-  TextT,
   ArrowFatLinesUp,
   Translate,
   Queue,
@@ -29,6 +28,7 @@ import {
   FONT_SCALE_SIZES,
   FONT_SCALES,
   QURAN_FONTS,
+  PLAYBACK_RATES,
   SUPPORTED_RECITATION_IDS,
   type FontScale,
   type QuranFont,
@@ -51,17 +51,18 @@ export default function PlayerScreen() {
   const isPlaying = usePlaylistStore((s) => s.isPlaying);
   const togglePlay = usePlaylistStore((s) => s.togglePlay);
   const skipTo = usePlaylistStore((s) => s.skipTo);
+  const applyPlaybackRate = usePlaylistStore((s) => s.applyPlaybackRate);
   const stopAndReset = usePlaylistStore((s) => s.stopAndReset);
 
   const showArabic = useSettingsStore((s) => s.showArabic);
-  const showTranslation = useSettingsStore((s) => s.showTranslation);
   const quranFont = useSettingsStore((s) => s.quranFont);
   const fontScale = useSettingsStore((s) => s.fontScale);
   const recitationId = useSettingsStore((s) => s.recitationId);
+  const playbackRate = useSettingsStore((s) => s.playbackRate);
   const setShowArabic = useSettingsStore((s) => s.setShowArabic);
-  const setShowTranslation = useSettingsStore((s) => s.setShowTranslation);
   const setQuranFont = useSettingsStore((s) => s.setQuranFont);
   const setFontScale = useSettingsStore((s) => s.setFontScale);
+  const setPlaybackRate = useSettingsStore((s) => s.setPlaybackRate);
   const setRecitation = useSettingsStore((s) => s.setRecitation);
 
   const { data: chapters } = useChapters();
@@ -143,9 +144,6 @@ export default function PlayerScreen() {
               {arabicText}
             </Text>
           )}
-          {showTranslation && currentItem.translation != null && (
-            <Text style={styles.translationText}>{currentItem.translation}</Text>
-          )}
         </View>
       </ScrollView>
 
@@ -153,6 +151,21 @@ export default function PlayerScreen() {
       <View style={[styles.card, { paddingBottom: insets.bottom + 30 }]}>
           {/* Playback controls + repeat badge */}
           <View style={styles.controlsRow}>
+            {/* Speed — mirrors repeat badge on the left */}
+            <TouchableOpacity
+              onPress={() => {
+                const idx = PLAYBACK_RATES.indexOf(playbackRate as typeof PLAYBACK_RATES[number]);
+                const next = PLAYBACK_RATES[(idx + 1) % PLAYBACK_RATES.length];
+                setPlaybackRate(next);
+                applyPlaybackRate(next);
+              }}
+              hitSlop={12}
+              style={styles.repeatBadge}
+            >
+              <Text style={styles.repeatNum}>{playbackRate}</Text>
+              <Text style={styles.repeatX}>×</Text>
+            </TouchableOpacity>
+
             <View style={styles.playbackControls}>
               <TouchableOpacity
                 onPress={() => skipTo(currentIndex - 1)}
@@ -203,14 +216,6 @@ export default function PlayerScreen() {
                   ? <Eye size={24} color={TEAL} />
                   : <EyeSlash size={24} color={TEAL} opacity={0.35} />
                 }
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => setShowTranslation(!showTranslation)} hitSlop={10}>
-                <TextT
-                  size={24}
-                  color={TEAL}
-                  opacity={showTranslation ? 1 : 0.35}
-                />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -385,8 +390,7 @@ const styles = StyleSheet.create({
   controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 45,
+    justifyContent: 'space-between',
   },
   playbackControls: {
     flexDirection: 'row',

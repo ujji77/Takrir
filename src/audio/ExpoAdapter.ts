@@ -33,6 +33,10 @@ export class ExpoAdapter implements AudioPort {
     this.player?.pause();
   }
 
+  setRate(rate: number): void {
+    this.player?.setPlaybackRate(rate);
+  }
+
   resume(): void {
     this.player?.play();
   }

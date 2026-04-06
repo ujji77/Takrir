@@ -10,13 +10,13 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { CaretRight } from 'phosphor-react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useChapters } from '../src/hooks/useChapters';
 import AppHeader from '../src/components/AppHeader';
 import type { Chapter } from '../src/types/api';
 
 const TEAL = '#00cbbf';
-const BLUE = '#1853bf';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -120,14 +120,19 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Add detail link */}
-        <View style={styles.addDetailRow}>
-          <TouchableOpacity onPress={handleAddDetail} disabled={!canProceed} activeOpacity={0.7}>
-            <Text style={[styles.addDetailText, !canProceed && styles.addDetailDisabled]}>
-              Add detail +
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Continue button — only visible once a surah is selected */}
+        {selectedChapter && (
+          <View style={styles.continueRow}>
+            <TouchableOpacity
+              style={[styles.continueBtn, !canProceed && styles.continueBtnDisabled]}
+              onPress={handleAddDetail}
+              disabled={!canProceed}
+              activeOpacity={0.8}
+            >
+              <CaretRight size={22} color="#fff" weight="bold" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* Surah Picker Modal */}
@@ -249,20 +254,23 @@ const styles = StyleSheet.create({
     width: '100%',
     textAlign: 'center',
   },
-  addDetailRow: {
+  continueRow: {
     alignItems: 'flex-end',
     alignSelf: 'center',
     maxWidth: 340,
     width: '100%',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingRight: 4,
   },
-  addDetailText: {
-    fontSize: 20,
-    color: BLUE,
+  continueBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 60,
+    backgroundColor: '#77E1DB',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  addDetailDisabled: {
-    color: '#b0c4e8',
+  continueBtnDisabled: {
+    opacity: 0.4,
   },
 
   // Modal

@@ -25,6 +25,7 @@ interface PlaylistState {
   advance: () => Promise<void>;
   togglePlay: () => void;
   skipTo: (index: number) => Promise<void>;
+  applyPlaybackRate: (rate: number) => void;
   stopAndReset: () => void;
 }
 
@@ -114,6 +115,10 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
         await audio.play(resolveUrl(items[index]), rate);
         subscribeFinish();
         set({ currentIndex: index, currentRepeat: 0, isPlaying: true });
+      },
+
+      applyPlaybackRate: (rate) => {
+        audio.setRate(rate);
       },
 
       stopAndReset: () => {

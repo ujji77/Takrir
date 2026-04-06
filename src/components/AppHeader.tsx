@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import HeaderMenu from './HeaderMenu';
 
 const TEAL = '#00cbbf';
 
@@ -23,9 +24,7 @@ export default function AppHeader({ title, onBack }: Props) {
 
         <Text style={styles.title}>{title}</Text>
 
-        <View style={styles.iconWrap}>
-          <Text style={styles.iconText}>···</Text>
-        </View>
+        <HeaderMenu />
       </View>
     </View>
   );

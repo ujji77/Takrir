@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import HeaderMenu from './HeaderMenu';
 
 const TEAL = '#00cbbf';
 
@@ -21,9 +22,7 @@ export default function PlaylistHeader({ chapterName, fromVerse, toVerse, onBack
 
         <Text style={styles.title}>Create your playlist</Text>
 
-        <View style={styles.iconWrap}>
-          <Text style={styles.iconText}>···</Text>
-        </View>
+        <HeaderMenu />
       </View>
 
       <View style={styles.chips}>

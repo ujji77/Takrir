@@ -4,6 +4,8 @@ export interface AudioPort {
   play(url: string, rate: number): Promise<void>;
   pause(): void;
   resume(): void;
+  /** Change playback speed of the currently loaded track. */
+  setRate(rate: number): void;
   /** Stop and release all resources. */
   stop(): void;
   /** Register a finish callback. Returns an unsubscribe function. */
