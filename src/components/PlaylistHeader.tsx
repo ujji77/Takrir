@@ -14,7 +14,6 @@ export default function PlaylistHeader({ chapterName, fromVerse, toVerse, onBack
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
-      {/* Top row: back + title + menu */}
       <View style={styles.topRow}>
         <TouchableOpacity onPress={onBack} hitSlop={12} style={styles.iconWrap}>
           <Text style={styles.iconText}>←</Text>
@@ -22,13 +21,11 @@ export default function PlaylistHeader({ chapterName, fromVerse, toVerse, onBack
 
         <Text style={styles.title}>Create your playlist</Text>
 
-        {/* Placeholder to balance the layout — three-dot menu */}
         <View style={styles.iconWrap}>
           <Text style={styles.iconText}>···</Text>
         </View>
       </View>
 
-      {/* Chips row */}
       <View style={styles.chips}>
         <Text style={styles.chipLabel}>Surah</Text>
         <View style={styles.chip}>

@@ -102,6 +102,7 @@ export default function PlaylistScreen() {
                 resizeMode="contain"
               />
               <Text style={styles.bismillahEn}>{BISMILLAH_EN}</Text>
+              <View style={[styles.divider, { marginTop: 0, marginBottom: 20, alignSelf: 'stretch' }]} />
             </View>
           }
           ItemSeparatorComponent={() => <View style={styles.divider} />}
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
   bismillahBlock: {
     alignItems: 'center',
     gap: 14,
-    paddingBottom: 24,
+    paddingBottom: 0,
   },
   bismillahImage: {
     width: 128,
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
     color: TEAL,
     fontWeight: '600',
     letterSpacing: 0.5,
-    width: 36,
+    width: 52,
     textAlign: 'center',
   },
   verseContent: {

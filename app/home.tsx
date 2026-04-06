@@ -10,8 +10,9 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useChapters } from '../src/hooks/useChapters';
+import AppHeader from '../src/components/AppHeader';
 import type { Chapter } from '../src/types/api';
 
 const TEAL = '#00cbbf';
@@ -65,6 +66,8 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <AppHeader title="Welcome to Takrir" />
       <View style={styles.card}>
         {/* Sentence-style selector row */}
         <View style={styles.sentenceRow}>
@@ -188,15 +191,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fafafa',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
   card: {
-    width: '100%',
-    maxWidth: 340,
-    backgroundColor: '#fafafa',
-    borderRadius: 10,
+    flex: 1,
+    justifyContent: 'center',
     paddingHorizontal: 20,
     paddingVertical: 30,
     gap: 16,
@@ -205,7 +203,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
+    alignSelf: 'center',
     gap: 10,
+    maxWidth: 340,
+    width: '100%',
   },
   labelWrap: {
     paddingVertical: 10,
@@ -250,6 +251,9 @@ const styles = StyleSheet.create({
   },
   addDetailRow: {
     alignItems: 'flex-end',
+    alignSelf: 'center',
+    maxWidth: 340,
+    width: '100%',
     paddingHorizontal: 10,
     paddingVertical: 10,
   },
