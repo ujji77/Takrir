@@ -111,6 +111,9 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
       skipTo: async (index) => {
         const { items } = get();
         if (index < 0 || index >= items.length) return;
+        // Unsubscribe finish listener first to prevent advance() racing with this skip.
+        unsubFinish?.();
+        unsubFinish = null;
         const rate = useSettingsStore.getState().playbackRate;
         await audio.play(resolveUrl(items[index]), rate);
         subscribeFinish();

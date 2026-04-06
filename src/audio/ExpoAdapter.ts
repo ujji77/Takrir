@@ -5,15 +5,27 @@ import type { AudioPort } from './AudioPort';
 export class ExpoAdapter implements AudioPort {
   private player: AudioPlayer | null = null;
   private finishCb: (() => void) | null = null;
+  private playId = 0;
 
   async play(url: string, rate: number): Promise<void> {
-    this.stop();
+    // Increment before the await so any concurrent call gets a higher id.
+    const id = ++this.playId;
+
+    // Stop current audio synchronously before yielding.
+    if (this.player) {
+      this.player.pause();
+      this.player.remove();
+      this.player = null;
+    }
 
     await setAudioModeAsync({
       playsInSilentMode: true,
       shouldPlayInBackground: true,
       interruptionMode: 'doNotMix',
     });
+
+    // A newer play() call started while we were awaiting — bail out.
+    if (id !== this.playId) return;
 
     const player = createAudioPlayer({ uri: url });
 
@@ -26,6 +38,7 @@ export class ExpoAdapter implements AudioPort {
     if (rate !== 1) {
       player.setPlaybackRate(rate);
     }
+
     this.player = player;
   }
 
@@ -43,6 +56,7 @@ export class ExpoAdapter implements AudioPort {
 
   stop(): void {
     if (this.player) {
+      this.player.pause();
       this.player.remove();
       this.player = null;
     }

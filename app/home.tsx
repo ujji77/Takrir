@@ -7,9 +7,9 @@ import {
   Modal,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaretRight } from 'phosphor-react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useChapters } from '../src/hooks/useChapters';
