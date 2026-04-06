@@ -1,22 +1,53 @@
 import { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Modal,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  Eye,
+  EyeSlash,
+  TextT,
+  ArrowFatLinesUp,
+  Queue,
+  CaretLeft,
+  SkipBack,
+  SkipForward,
+  Play,
+  Pause,
+} from 'phosphor-react-native';
 import { usePlaylistStore } from '../src/store/playlist';
-import { useSettingsStore, FONT_SCALE_SIZES } from '../src/store/settings';
+import {
+  useSettingsStore,
+  FONT_SCALE_SIZES,
+  FONT_SCALES,
+  SUPPORTED_RECITATION_IDS,
+  type FontScale,
+  type QuranFont,
+} from '../src/store/settings';
 import { useChapters } from '../src/hooks/useChapters';
-import SettingsPopover from '../src/components/SettingsPopover';
+import { useRecitations } from '../src/hooks/useRecitations';
 
 const TEAL = '#00cbbf';
 const TEAL_ACTIVE = '#a0eae5';
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const bismillahImg = require('../assets/bismillah.png');
 
 export default function PlayerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [playlistVisible, setPlaylistVisible] = useState(false);
 
   const items = usePlaylistStore((s) => s.items);
   const currentIndex = usePlaylistStore((s) => s.currentIndex);
+  const currentRepeat = usePlaylistStore((s) => s.currentRepeat);
   const isPlaying = usePlaylistStore((s) => s.isPlaying);
   const togglePlay = usePlaylistStore((s) => s.togglePlay);
   const skipTo = usePlaylistStore((s) => s.skipTo);
@@ -26,25 +57,36 @@ export default function PlayerScreen() {
   const showTranslation = useSettingsStore((s) => s.showTranslation);
   const quranFont = useSettingsStore((s) => s.quranFont);
   const fontScale = useSettingsStore((s) => s.fontScale);
+  const recitationId = useSettingsStore((s) => s.recitationId);
+  const setShowArabic = useSettingsStore((s) => s.setShowArabic);
+  const setShowTranslation = useSettingsStore((s) => s.setShowTranslation);
+  const setFontScale = useSettingsStore((s) => s.setFontScale);
+  const setRecitation = useSettingsStore((s) => s.setRecitation);
 
   const { data: chapters } = useChapters();
+  const { data: recitations } = useRecitations();
 
   const currentItem = items[currentIndex];
-
-  const chapterNumber = currentItem
-    ? parseInt(currentItem.verseKey.split(':')[0], 10)
-    : null;
+  const chapterNumber = currentItem ? parseInt(currentItem.verseKey.split(':')[0], 10) : null;
 
   const chapter = useMemo(
     () => chapters?.find((c) => c.id === chapterNumber),
     [chapters, chapterNumber],
   );
 
+  const supportedRecitations = useMemo(
+    () =>
+      recitations?.filter((r) =>
+        (SUPPORTED_RECITATION_IDS as readonly number[]).includes(r.id),
+      ) ?? [],
+    [recitations],
+  );
+
   const arabicFontSize = FONT_SCALE_SIZES[fontScale];
   const arabicText = currentItem
-    ? (quranFont === 'text_indopak'
-        ? (currentItem.text_indopak ?? currentItem.text_uthmani)
-        : currentItem.text_uthmani)
+    ? quranFont === 'text_indopak'
+      ? (currentItem.text_indopak ?? currentItem.text_uthmani)
+      : currentItem.text_uthmani
     : '';
 
   const handleBack = () => {
@@ -55,7 +97,7 @@ export default function PlayerScreen() {
   if (!currentItem) {
     return (
       <View style={styles.center}>
-        <Text>No playlist loaded.</Text>
+        <Text style={styles.emptyText}>No playlist loaded.</Text>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={{ color: TEAL }}>Back</Text>
         </TouchableOpacity>
@@ -71,105 +113,199 @@ export default function PlayerScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Header */}
+      {/* Fixed header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={handleBack} hitSlop={12} style={styles.iconWrap}>
-            <Text style={styles.iconText}>←</Text>
+          <TouchableOpacity onPress={handleBack} hitSlop={12} style={styles.headerIconWrap}>
+            <CaretLeft size={22} color={TEAL} weight="bold" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{chapterName}</Text>
-          <TouchableOpacity
-            onPress={() => setSettingsVisible(true)}
-            hitSlop={12}
-            style={styles.iconWrap}
-          >
-            <Text style={styles.iconText}>···</Text>
-          </TouchableOpacity>
+          <View style={styles.headerIconWrap} />
         </View>
       </View>
 
-      {/* Arabic + Translation */}
-      <View style={styles.main}>
-        {showArabic && (
-          <Text
-            style={[
-              styles.arabicText,
-              { fontSize: arabicFontSize, lineHeight: arabicFontSize * 2 },
-            ]}
-          >
-            {arabicText}
-          </Text>
-        )}
-        {showTranslation && currentItem.translation && (
-          <Text style={styles.translationText}>{currentItem.translation}</Text>
-        )}
-      </View>
-
-      {/* Verse chip strip */}
       <ScrollView
-        contentContainerStyle={styles.chipStrip}
-        style={styles.chipScroll}
+        style={styles.scroll}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}
       >
-        {items.map((item, index) => (
-          <TouchableOpacity
-            key={item.verseKey}
-            onPress={() => skipTo(index)}
-            style={[styles.chip, index === currentIndex && styles.chipActive]}
-          >
-            <Text style={styles.chipText}>
-              {item.verseKey} (x{item.repeatCount})
+        {/* Verse text area */}
+        <View style={styles.verseArea}>
+          <Text style={styles.verseKey}>{currentItem.verseKey}</Text>
+          {showArabic && (
+            <Text
+              style={[
+                styles.arabicText,
+                { fontSize: arabicFontSize, lineHeight: arabicFontSize * 2 },
+              ]}
+            >
+              {arabicText}
             </Text>
-          </TouchableOpacity>
-        ))}
+          )}
+          {showTranslation && currentItem.translation && (
+            <Text style={styles.translationText}>{currentItem.translation}</Text>
+          )}
+        </View>
+
+        {/* Controls card — reciters revealed by scrolling down inside it */}
+        <View style={styles.card}>
+          {/* Playback controls + repeat badge */}
+          <View style={styles.controlsRow}>
+            <View style={styles.playbackControls}>
+              <TouchableOpacity
+                onPress={() => skipTo(currentIndex - 1)}
+                disabled={currentIndex === 0}
+                hitSlop={12}
+              >
+                <SkipBack
+                  size={26}
+                  color={TEAL}
+                  weight="fill"
+                  style={currentIndex === 0 ? styles.dimmed : undefined}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.playBtn} onPress={togglePlay} activeOpacity={0.8}>
+                {isPlaying
+                  ? <Pause size={36} color="#fff" weight="fill" />
+                  : <Play size={36} color="#fff" weight="fill" style={{ marginLeft: 4 }} />
+                }
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => skipTo(currentIndex + 1)}
+                disabled={currentIndex === items.length - 1}
+                hitSlop={12}
+              >
+                <SkipForward
+                  size={26}
+                  color={TEAL}
+                  weight="fill"
+                  style={currentIndex === items.length - 1 ? styles.dimmed : undefined}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Repeat counter */}
+            <View style={styles.repeatBadge}>
+              <Text style={styles.repeatNum}>{currentRepeat + 1}</Text>
+              <Text style={styles.repeatX}>×</Text>
+            </View>
+          </View>
+
+          {/* Icon bar: eye + translation toggle | playlist */}
+          <View style={styles.iconBar}>
+            <View style={styles.iconBarLeft}>
+              <TouchableOpacity onPress={() => setShowArabic(!showArabic)} hitSlop={10}>
+                {showArabic
+                  ? <Eye size={24} color={TEAL} />
+                  : <EyeSlash size={24} color={TEAL} opacity={0.35} />
+                }
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setShowTranslation(!showTranslation)} hitSlop={10}>
+                <TextT
+                  size={24}
+                  color={TEAL}
+                  opacity={showTranslation ? 1 : 0.35}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  const idx = FONT_SCALES.indexOf(fontScale);
+                  setFontScale(FONT_SCALES[(idx + 1) % FONT_SCALES.length] as FontScale);
+                }}
+                hitSlop={10}
+              >
+                <ArrowFatLinesUp size={24} color={TEAL} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity onPress={() => setPlaylistVisible(true)} hitSlop={10}>
+              <Queue size={24} color={TEAL} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Reciter section — inside the card, scroll down to reveal */}
+          <View style={styles.reciterSection}>
+            <Text style={styles.sectionTitle}>Reciter</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.reciterList}
+              nestedScrollEnabled
+            >
+              {supportedRecitations.map((reciter) => {
+                const active = reciter.id === recitationId;
+                return (
+                  <TouchableOpacity
+                    key={reciter.id}
+                    style={[styles.reciterCard, active && styles.reciterCardActive]}
+                    onPress={() => setRecitation(reciter.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Image
+                      source={bismillahImg}
+                      style={styles.reciterImage}
+                      resizeMode="cover"
+                    />
+                    <Text style={styles.reciterName} numberOfLines={2}>
+                      {reciter.reciter_name}
+                      {reciter.style ? `\n${reciter.style}` : ''}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
       </ScrollView>
 
-      {/* Bottom controls */}
-      <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
+      {/* Playlist bottom sheet */}
+      <Modal
+        visible={playlistVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPlaylistVisible(false)}
+      >
         <TouchableOpacity
-          onPress={() => skipTo(currentIndex - 1)}
-          disabled={currentIndex === 0}
-          hitSlop={12}
-        >
-          <Text style={[styles.skipIcon, currentIndex === 0 && styles.iconDisabled]}>⏮</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.playButton} onPress={togglePlay} activeOpacity={0.8}>
-          <Text style={styles.playIcon}>{isPlaying ? '⏸' : '▶'}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => skipTo(currentIndex + 1)}
-          disabled={currentIndex === items.length - 1}
-          hitSlop={12}
-        >
-          <Text
-            style={[
-              styles.skipIcon,
-              currentIndex === items.length - 1 && styles.iconDisabled,
-            ]}
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => setPlaylistVisible(false)}
+        />
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.sheetTitle}>Playlist</Text>
+          <ScrollView
+            contentContainerStyle={styles.chipGrid}
+            keyboardShouldPersistTaps="handled"
           >
-            ⏭
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <SettingsPopover visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
+            {items.map((item, index) => (
+              <TouchableOpacity
+                key={item.verseKey}
+                onPress={() => {
+                  skipTo(index);
+                  setPlaylistVisible(false);
+                }}
+                style={[styles.chip, index === currentIndex && styles.chipActive]}
+              >
+                <Text style={styles.chipText}>
+                  {item.verseKey} (x{item.repeatCount})
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fafafa',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
+  container: { flex: 1, backgroundColor: '#fafafa' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
+  emptyText: { fontSize: 16, color: '#888' },
 
   // Header
   header: {
@@ -187,14 +323,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  iconWrap: {
-    minWidth: 28,
-    alignItems: 'center',
-  },
-  iconText: {
-    fontSize: 18,
-    color: TEAL,
-  },
+  headerIconWrap: { width: 28, alignItems: 'center' },
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -203,17 +332,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Main content
-  main: {
-    flex: 1,
+  scroll: { flex: 1 },
+
+  // Verse area
+  verseArea: {
+    minHeight: SCREEN_HEIGHT * 0.38,
     justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: 38,
-    gap: 24,
+    paddingVertical: 24,
+    gap: 16,
+  },
+  verseKey: {
+    fontSize: 18,
+    color: TEAL,
+    textAlign: 'center',
   },
   arabicText: {
     color: '#333',
-    textAlign: 'right',
+    textAlign: 'center',
     fontWeight: '500',
     width: '100%',
   },
@@ -221,24 +357,129 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#3b3b3b',
     lineHeight: 24,
-    textAlign: 'left',
-    width: '100%',
+    textAlign: 'center',
   },
 
-  // Chip strip
-  chipScroll: {
-    maxHeight: 110,
-    flexGrow: 0,
+  // Controls card
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 30,
+    gap: 30,
   },
-  chipStrip: {
+  controlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 45,
+  },
+  playbackControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 43,
+  },
+  dimmed: { opacity: 0.3 },
+  playBtn: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(0, 203, 191, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  repeatBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  repeatNum: { fontSize: 16, color: TEAL },
+  repeatX: { fontSize: 16, color: TEAL },
+
+  // Icon bar
+  iconBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  iconBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+
+  // Reciter section — inside the card
+  reciterSection: {
+    backgroundColor: '#fafafa',
+    borderRadius: 20,
+    padding: 16,
+    gap: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#222',
+  },
+  reciterList: { gap: 12, paddingRight: 4 },
+  reciterCard: {
+    width: 100,
+    height: 120,
+    borderRadius: 10,
+    backgroundColor: '#efefef',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    padding: 10,
+  },
+  reciterCardActive: {
+    borderWidth: 2,
+    borderColor: TEAL,
+  },
+  reciterImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.12,
+  },
+  reciterName: {
+    fontSize: 12,
+    color: '#000',
+    lineHeight: 18,
+  },
+
+  // Playlist sheet
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '60%',
+    paddingTop: 12,
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    backgroundColor: '#ddd',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  sheetTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  chipGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 38,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
     gap: 8,
+    paddingBottom: 8,
   },
   chip: {
-    width: 90,
     height: 31,
     borderRadius: 10,
     borderWidth: 1,
@@ -248,48 +489,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
   },
-  chipActive: {
-    backgroundColor: TEAL_ACTIVE,
-  },
-  chipText: {
-    fontSize: 13,
-    color: '#222',
-  },
-
-  // Controls
-  controls: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 43,
-    paddingTop: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  playButton: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(0, 203, 191, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playIcon: {
-    fontSize: 32,
-    color: '#fff',
-    marginLeft: 4,
-  },
-  skipIcon: {
-    fontSize: 24,
-    color: TEAL,
-  },
-  iconDisabled: {
-    opacity: 0.3,
-  },
+  chipActive: { backgroundColor: TEAL_ACTIVE },
+  chipText: { fontSize: 13, color: '#222' },
 });
