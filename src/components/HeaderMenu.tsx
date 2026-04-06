@@ -9,11 +9,12 @@ import {
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { DotsThree } from 'phosphor-react-native';
+import { DotsThree, ArrowSquareOut } from 'phosphor-react-native';
 import { useAuthStore } from '../store/auth';
 
-const PRIVACY_POLICY_URL = 'https://quran.com/privacy';
-const TERMS_URL = 'https://quran.com/terms';
+const PRIVACY_POLICY_URL = 'https://takrir-web.spatialuzair.workers.dev/privacy';
+const TERMS_URL = 'https://takrir-web.spatialuzair.workers.dev/terms';
+const CONTACT_URL = 'https://takrir-web.spatialuzair.workers.dev/';
 
 import { APP_PRIMARY } from '../theme';
 
@@ -60,6 +61,7 @@ export default function HeaderMenu() {
               activeOpacity={0.7}
             >
               <Text style={styles.menuItemText}>Privacy Policy</Text>
+              <ArrowSquareOut size={15} color="#aaa" />
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -70,6 +72,18 @@ export default function HeaderMenu() {
               activeOpacity={0.7}
             >
               <Text style={styles.menuItemText}>Terms of Service</Text>
+              <ArrowSquareOut size={15} color="#aaa" />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => { setVisible(false); Linking.openURL(CONTACT_URL); }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.menuItemText}>Contact</Text>
+              <ArrowSquareOut size={15} color="#aaa" />
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -104,6 +118,9 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   menuItemText: {
     fontSize: 15,
