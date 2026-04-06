@@ -6,16 +6,11 @@ import { useSettingsStore } from './settings';
 
 export interface PlaylistItem {
   verseKey: string;
-  url: string;
-  /** All available font text variants. Player picks based on current font setting. */
-  texts: {
-    text_uthmani: string;
-    text_indopak?: string;
-    text_imlaei?: string;
-    code_v1?: string;
-    code_v2?: string;
-  };
-  /** Always populated from the API — display is controlled by showTranslation setting. */
+  /** Audio URLs keyed by recitation ID — pre-fetched for all supported reciters. */
+  audioUrls: Record<number, string>;
+  text_uthmani: string;
+  text_indopak: string | null;
+  /** Always populated from the API — display controlled by showTranslation setting. */
   translation: string | null;
   repeatCount: number;
 }
@@ -33,8 +28,13 @@ interface PlaylistState {
   stopAndReset: () => void;
 }
 
+function resolveUrl(item: PlaylistItem): string {
+  const reciterId = useSettingsStore.getState().recitationId;
+  return item.audioUrls[reciterId] ?? Object.values(item.audioUrls)[0] ?? '';
+}
+
 export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<PlaylistState>> {
-  return create<PlaylistState>((set, get) => {
+  const store = create<PlaylistState>((set, get) => {
     let unsubFinish: (() => void) | null = null;
 
     function subscribeFinish() {
@@ -43,6 +43,18 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
         get().advance();
       });
     }
+
+    // Live reciter switching — restart current verse with new URL when reciter changes.
+    useSettingsStore.subscribe(async (state, prevState) => {
+      if (state.recitationId === prevState.recitationId) return;
+      const { items, currentIndex, isPlaying } = get();
+      if (!isPlaying || items.length === 0) return;
+      const url = resolveUrl(items[currentIndex]);
+      if (!url) return;
+      const rate = useSettingsStore.getState().playbackRate;
+      await audio.play(url, rate);
+      subscribeFinish();
+    });
 
     return {
       items: [],
@@ -53,7 +65,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
       loadPlaylist: async (items) => {
         if (items.length === 0) return;
         const rate = useSettingsStore.getState().playbackRate;
-        await audio.play(items[0].url, rate);
+        await audio.play(resolveUrl(items[0]), rate);
         subscribeFinish();
         set({ items, currentIndex: 0, currentRepeat: 0, isPlaying: true });
       },
@@ -67,7 +79,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
         const playsLeft = current.repeatCount - 1 - currentRepeat;
 
         if (playsLeft > 0) {
-          await audio.play(current.url, rate);
+          await audio.play(resolveUrl(current), rate);
           subscribeFinish();
           set({ currentRepeat: currentRepeat + 1 });
         } else {
@@ -79,7 +91,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
             set({ isPlaying: false, currentIndex: 0, currentRepeat: 0 });
             return;
           }
-          await audio.play(items[nextIndex].url, rate);
+          await audio.play(resolveUrl(items[nextIndex]), rate);
           subscribeFinish();
           set({ currentIndex: nextIndex, currentRepeat: 0, isPlaying: true });
         }
@@ -99,7 +111,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
         const { items } = get();
         if (index < 0 || index >= items.length) return;
         const rate = useSettingsStore.getState().playbackRate;
-        await audio.play(items[index].url, rate);
+        await audio.play(resolveUrl(items[index]), rate);
         subscribeFinish();
         set({ currentIndex: index, currentRepeat: 0, isPlaying: true });
       },
@@ -112,8 +124,9 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
       },
     };
   });
+
+  return store;
 }
 
 const defaultStore = createPlaylistStore(new ExpoAdapter());
-
 export const usePlaylistStore = defaultStore;

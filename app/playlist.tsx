@@ -10,8 +10,8 @@ import {
 import { Image } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useVersesByChapter } from '../src/hooks/useVersesByChapter';
-import { useAudioFiles } from '../src/hooks/useAudioFiles';
-import { useSettingsStore } from '../src/store/settings';
+import { useMultipleAudioFiles } from '../src/hooks/useMultipleAudioFiles';
+import { useSettingsStore, SUPPORTED_RECITATION_IDS } from '../src/store/settings';
 import { usePlaylistStore } from '../src/store/playlist';
 import { useChapters } from '../src/hooks/useChapters';
 import { buildPlaylistItems } from '../src/utils/buildPlaylistItems';
@@ -28,10 +28,12 @@ export default function PlaylistScreen() {
   const fromVerse = parseInt(params.from, 10);
   const toVerse = parseInt(params.to, 10);
 
-  const recitationId = useSettingsStore((s) => s.recitationId);
   const { data: chapters } = useChapters();
   const { data: verses, isLoading: versesLoading } = useVersesByChapter(chapterNumber);
-  const { data: audioFiles, isLoading: audioLoading } = useAudioFiles(chapterNumber, recitationId);
+  const { data: audioByReciter, isLoading: audioLoading } = useMultipleAudioFiles(
+    chapterNumber,
+    SUPPORTED_RECITATION_IDS,
+  );
 
   const [repeatCounts, setRepeatCounts] = useState<Record<string, number>>({});
   const loadPlaylist = usePlaylistStore((s) => s.loadPlaylist);
@@ -46,12 +48,6 @@ export default function PlaylistScreen() {
     [verses, fromVerse, toVerse],
   );
 
-  const audioMap = useMemo(() => {
-    const map = new Map<string, string>();
-    audioFiles?.forEach((f) => map.set(f.verse_key, f.url));
-    return map;
-  }, [audioFiles]);
-
   const setRepeat = (verseKey: string, delta: number) => {
     setRepeatCounts((prev) => ({
       ...prev,
@@ -62,7 +58,7 @@ export default function PlaylistScreen() {
   const handlePlay = () => {
     const playlistItems = buildPlaylistItems(
       verses ?? [],
-      audioFiles ?? [],
+      audioByReciter,
       fromVerse,
       toVerse,
       repeatCounts,
@@ -70,7 +66,9 @@ export default function PlaylistScreen() {
     loadPlaylist(playlistItems).then(() => router.push('/player'));
   };
 
-  const allHaveAudio = filteredVerses.every((v) => audioMap.has(v.verse_key));
+  const primaryAudio = Object.values(audioByReciter)[0] ?? [];
+  const primaryMap = new Map(primaryAudio.map((f) => [f.verse_key, f.url]));
+  const allHaveAudio = filteredVerses.every((v) => primaryMap.has(v.verse_key));
   const canPlay = allHaveAudio && filteredVerses.length > 0;
 
   return (

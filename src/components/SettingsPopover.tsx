@@ -14,6 +14,7 @@ import {
   QURAN_FONTS,
   FONT_SCALES,
   PLAYBACK_RATES,
+  SUPPORTED_RECITATION_IDS,
   type QuranFont,
   type FontScale,
 } from '../store/settings';
@@ -21,9 +22,6 @@ import {
 const FONT_LABELS: Record<QuranFont, string> = {
   text_uthmani: 'Uthmani',
   text_indopak: 'Indo-Pak',
-  text_imlaei: 'Imlaei',
-  code_v1: 'QCF v1',
-  code_v2: 'QCF v2',
 };
 
 function cycleNext<T>(arr: readonly T[], current: T): T {
@@ -99,7 +97,7 @@ export default function SettingsPopover({ visible, onClose }: Props) {
               <Text style={styles.backText}>‹ Back</Text>
             </TouchableOpacity>
             <FlatList
-              data={recitations}
+              data={recitations?.filter((r) => (SUPPORTED_RECITATION_IDS as readonly number[]).includes(r.id))}
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => (
                 <TouchableOpacity

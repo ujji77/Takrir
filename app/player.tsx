@@ -42,7 +42,9 @@ export default function PlayerScreen() {
 
   const arabicFontSize = FONT_SCALE_SIZES[fontScale];
   const arabicText = currentItem
-    ? (currentItem.texts[quranFont] ?? currentItem.texts.text_uthmani)
+    ? (quranFont === 'text_indopak'
+        ? (currentItem.text_indopak ?? currentItem.text_uthmani)
+        : currentItem.text_uthmani)
     : '';
 
   const handleBack = () => {

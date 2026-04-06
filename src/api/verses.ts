@@ -2,8 +2,7 @@ import { apiFetch } from './client';
 import { fetchAllPages } from './pagination';
 import type { VersesResponse, Verse } from '../types/api';
 
-// Always fetch all font variants so the player can switch fonts without rebuilding the playlist.
-const ALL_FIELDS = 'text_uthmani,text_indopak,text_imlaei,code_v1,code_v2';
+const ALL_FIELDS = 'text_uthmani,text_indopak';
 // Saheeh International — default English translation
 const TRANSLATION_ID = 131;
 
