@@ -390,6 +390,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 30,
     padding: 30,
     gap: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 12,
   },
   controlsRow: {
     flexDirection: 'row',
