@@ -27,7 +27,7 @@ export function buildPlaylistItems(
         audioUrls,
         text_uthmani: verse.text_uthmani,
         text_indopak: verse.text_indopak ?? null,
-        translation: verse.translations?.[0]?.text ?? null,
+        translation: verse.translations?.[0]?.text?.replace(/<[^>]+>/g, '') ?? null,
         repeatCount: repeatCounts[verse.verse_key] ?? 1,
       };
     });

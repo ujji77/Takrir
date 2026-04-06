@@ -4,7 +4,7 @@ import type { VersesResponse, Verse } from '../types/api';
 
 const ALL_FIELDS = 'text_uthmani,text_indopak';
 // Saheeh International — default English translation
-const TRANSLATION_ID = 131;
+export const TRANSLATION_ID = 131;
 
 function fetchVersesPage(chapterNumber: number, page: number): Promise<VersesResponse> {
   return apiFetch<VersesResponse>(`/verses/by_chapter/${chapterNumber}`, {

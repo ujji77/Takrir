@@ -15,6 +15,7 @@ import {
   EyeSlash,
   TextT,
   ArrowFatLinesUp,
+  Translate,
   Queue,
   CaretLeft,
   SkipBack,
@@ -27,6 +28,7 @@ import {
   useSettingsStore,
   FONT_SCALE_SIZES,
   FONT_SCALES,
+  QURAN_FONTS,
   SUPPORTED_RECITATION_IDS,
   type FontScale,
   type QuranFont,
@@ -58,6 +60,7 @@ export default function PlayerScreen() {
   const recitationId = useSettingsStore((s) => s.recitationId);
   const setShowArabic = useSettingsStore((s) => s.setShowArabic);
   const setShowTranslation = useSettingsStore((s) => s.setShowTranslation);
+  const setQuranFont = useSettingsStore((s) => s.setQuranFont);
   const setFontScale = useSettingsStore((s) => s.setFontScale);
   const setRecitation = useSettingsStore((s) => s.setRecitation);
 
@@ -140,7 +143,7 @@ export default function PlayerScreen() {
               {arabicText}
             </Text>
           )}
-          {showTranslation && currentItem.translation && (
+          {showTranslation && currentItem.translation != null && (
             <Text style={styles.translationText}>{currentItem.translation}</Text>
           )}
         </View>
@@ -218,6 +221,16 @@ export default function PlayerScreen() {
                 hitSlop={10}
               >
                 <ArrowFatLinesUp size={24} color={TEAL} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  const idx = QURAN_FONTS.indexOf(quranFont);
+                  setQuranFont(QURAN_FONTS[(idx + 1) % QURAN_FONTS.length] as QuranFont);
+                }}
+                hitSlop={10}
+              >
+                <Translate size={24} color={TEAL} />
               </TouchableOpacity>
             </View>
 
