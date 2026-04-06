@@ -36,8 +36,7 @@ import {
 import { useChapters } from '../src/hooks/useChapters';
 import { useRecitations } from '../src/hooks/useRecitations';
 
-const TEAL = '#00cbbf';
-const TEAL_ACTIVE = '#a0eae5';
+import { APP_PRIMARY, APP_PRIMARY_ACTIVE } from '../src/theme';
 const bismillahImg = require('../assets/bismillah.png');
 
 export default function PlayerScreen() {
@@ -101,7 +100,7 @@ export default function PlayerScreen() {
       <View style={styles.center}>
         <Text style={styles.emptyText}>No playlist loaded.</Text>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={{ color: TEAL }}>Back</Text>
+          <Text style={{ color: APP_PRIMARY }}>Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -119,7 +118,7 @@ export default function PlayerScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={handleBack} hitSlop={12} style={styles.headerIconWrap}>
-            <CaretLeft size={22} color={TEAL} weight="bold" />
+            <CaretLeft size={22} color={APP_PRIMARY} weight="bold" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{chapterName}</Text>
           <View style={styles.headerIconWrap} />
@@ -174,7 +173,7 @@ export default function PlayerScreen() {
               >
                 <SkipBack
                   size={26}
-                  color={TEAL}
+                  color={APP_PRIMARY}
                   weight="fill"
                   style={currentIndex === 0 ? styles.dimmed : undefined}
                 />
@@ -194,7 +193,7 @@ export default function PlayerScreen() {
               >
                 <SkipForward
                   size={26}
-                  color={TEAL}
+                  color={APP_PRIMARY}
                   weight="fill"
                   style={currentIndex === items.length - 1 ? styles.dimmed : undefined}
                 />
@@ -213,8 +212,8 @@ export default function PlayerScreen() {
             <View style={styles.iconBarLeft}>
               <TouchableOpacity onPress={() => setShowArabic(!showArabic)} hitSlop={10}>
                 {showArabic
-                  ? <Eye size={24} color={TEAL} />
-                  : <EyeSlash size={24} color={TEAL} opacity={0.35} />
+                  ? <Eye size={24} color={APP_PRIMARY} />
+                  : <EyeSlash size={24} color={APP_PRIMARY} opacity={0.35} />
                 }
               </TouchableOpacity>
 
@@ -225,7 +224,7 @@ export default function PlayerScreen() {
                 }}
                 hitSlop={10}
               >
-                <ArrowFatLinesUp size={24} color={TEAL} />
+                <ArrowFatLinesUp size={24} color={APP_PRIMARY} />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -235,12 +234,12 @@ export default function PlayerScreen() {
                 }}
                 hitSlop={10}
               >
-                <Translate size={24} color={TEAL} />
+                <Translate size={24} color={APP_PRIMARY} />
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity onPress={() => setPlaylistVisible(true)} hitSlop={10}>
-              <Queue size={24} color={TEAL} />
+              <Queue size={24} color={APP_PRIMARY} />
             </TouchableOpacity>
           </View>
 
@@ -363,7 +362,7 @@ const styles = StyleSheet.create({
   },
   verseKey: {
     fontSize: 18,
-    color: TEAL,
+    color: APP_PRIMARY,
     textAlign: 'center',
   },
   arabicText: {
@@ -411,8 +410,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  repeatNum: { fontSize: 16, color: TEAL },
-  repeatX: { fontSize: 16, color: TEAL },
+  repeatNum: { fontSize: 16, color: APP_PRIMARY },
+  repeatX: { fontSize: 16, color: APP_PRIMARY },
 
   // Icon bar
   iconBar: {
@@ -450,7 +449,7 @@ const styles = StyleSheet.create({
   },
   reciterCardActive: {
     borderWidth: 2,
-    borderColor: TEAL,
+    borderColor: APP_PRIMARY,
   },
   reciterImage: {
     position: 'absolute',
@@ -507,6 +506,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
   },
-  chipActive: { backgroundColor: TEAL_ACTIVE },
+  chipActive: { backgroundColor: APP_PRIMARY_ACTIVE },
   chipText: { fontSize: 13, color: '#222' },
 });

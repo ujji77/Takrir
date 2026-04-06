@@ -17,7 +17,7 @@ import { useChapters } from '../src/hooks/useChapters';
 import { buildPlaylistItems } from '../src/utils/buildPlaylistItems';
 import PlaylistHeader from '../src/components/PlaylistHeader';
 
-const TEAL = '#00cbbf';
+import { APP_PRIMARY } from '../src/theme';
 const BISMILLAH_EN = 'In the Name of Allah\nthe Most Compassionate, Most Merciful';
 const bismillahImg = require('../assets/bismillah.png');
 
@@ -84,7 +84,7 @@ export default function PlaylistScreen() {
 
       {versesLoading || audioLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={TEAL} size="large" />
+          <ActivityIndicator color={APP_PRIMARY} size="large" />
           <Text style={styles.loadingText}>Loading verses & audio…</Text>
         </View>
       ) : (
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   },
   verseNumber: {
     fontSize: 14,
-    color: TEAL,
+    color: APP_PRIMARY,
     fontWeight: '600',
     letterSpacing: 0.5,
     width: 52,
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   arrowText: {
     fontSize: 20,
-    color: TEAL,
+    color: APP_PRIMARY,
   },
   repeatCount: {
     fontSize: 14,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: TEAL,
+    backgroundColor: APP_PRIMARY,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

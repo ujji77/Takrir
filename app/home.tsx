@@ -16,7 +16,7 @@ import { useChapters } from '../src/hooks/useChapters';
 import AppHeader from '../src/components/AppHeader';
 import type { Chapter } from '../src/types/api';
 
-const TEAL = '#00cbbf';
+import { APP_PRIMARY, APP_PRIMARY_LIGHT } from '../src/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -162,7 +162,7 @@ export default function HomeScreen() {
           </View>
 
           {isLoading ? (
-            <ActivityIndicator style={{ marginTop: 32 }} color={TEAL} />
+            <ActivityIndicator style={{ marginTop: 32 }} color={APP_PRIMARY} />
           ) : (
             <FlatList
               data={filteredChapters}
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   surahBox: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: TEAL,
+    borderColor: APP_PRIMARY,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 10,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   verseBox: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: TEAL,
+    borderColor: APP_PRIMARY,
     borderRadius: 8,
     width: 80,
     alignItems: 'center',
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 60,
-    backgroundColor: '#77E1DB',
+    backgroundColor: APP_PRIMARY_LIGHT,
     alignItems: 'center',
     justifyContent: 'center',
   },

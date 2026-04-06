@@ -1,14 +1,27 @@
-import { View, Text, Button, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Linking,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthRequest, exchangeCodeAsync, makeRedirectUri } from 'expo-auth-session';
 import { useAuthStore } from '../src/store/auth';
+import { APP_PRIMARY } from '../src/theme';
 import { useSettingsStore } from '../src/store/settings';
 
 WebBrowser.maybeCompleteAuthSession();
 
 const AUTH_URL = process.env.EXPO_PUBLIC_QURAN_AUTH_URL ?? 'https://oauth2.quran.foundation';
 const CLIENT_ID = process.env.EXPO_PUBLIC_QURAN_CLIENT_ID ?? '';
+
+const PRIVACY_URL = 'https://takrir.app/privacy';
+const TERMS_URL = 'https://takrir.app/terms';
 
 const discovery = {
   authorizationEndpoint: `${AUTH_URL}/oauth2/auth`,
@@ -18,8 +31,11 @@ const discovery = {
 
 const redirectUri = makeRedirectUri({ scheme: 'takrir', path: 'auth' });
 
+const iconImg = require('../assets/icon.png');
+
 export default function AuthScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const setToken = useAuthStore((s) => s.setToken);
   const setGuest = useAuthStore((s) => s.setGuest);
 
@@ -33,16 +49,13 @@ export default function AuthScreen() {
     discovery,
   );
 
-  // Handle auth response without useEffect — derive actions from response in render
   if (response?.type === 'success' && response.params.code && request?.codeVerifier) {
     exchangeCodeAsync(
       {
         clientId: CLIENT_ID,
         code: response.params.code,
         redirectUri,
-        extraParams: request.codeVerifier
-          ? { code_verifier: request.codeVerifier }
-          : undefined,
+        extraParams: { code_verifier: request.codeVerifier },
       },
       discovery,
     )
@@ -54,29 +67,112 @@ export default function AuthScreen() {
       .catch(() => null);
   }
 
-  const handleSignIn = () => {
-    promptAsync();
-  };
-
   const handleGuest = () => {
     setGuest();
     router.replace('/home');
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 24 }}>
-      <Text style={{ fontSize: 32, fontWeight: 'bold' }}>Takrir</Text>
-      <Text style={{ fontSize: 16, color: '#666', marginBottom: 24 }}>تكرير — Your Quran Playlist</Text>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      {/* Top spacer */}
+      <View style={styles.topSpacer} />
 
-      <Button
-        title={request ? 'Sign in with Quran.com' : 'Loading…'}
-        onPress={handleSignIn}
-        disabled={!request}
-      />
+      {/* Logo + wordmark */}
+      <View style={styles.brand}>
+        <Image source={iconImg} style={styles.icon} resizeMode="contain" />
+        <Text style={styles.wordmark}>Takrir</Text>
+      </View>
 
-      {!request && <ActivityIndicator />}
+      {/* Mid spacer */}
+      <View style={styles.midSpacer} />
 
-      <Button title="Continue as Guest" onPress={handleGuest} />
+      {/* Auth actions */}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          onPress={() => promptAsync()}
+          disabled={!request}
+          hitSlop={10}
+        >
+          {!request
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.actionLink}>Sign in</Text>
+          }
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={handleGuest} hitSlop={10}>
+          <Text style={styles.actionLink}>Continue as guest</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom spacer */}
+      <View style={styles.bottomSpacer} />
+
+      {/* Legal links */}
+      <View style={styles.legalRow}>
+        <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={8}>
+          <Text style={styles.legalLink}>Privacy Policy</Text>
+        </TouchableOpacity>
+        <View style={styles.legalDivider} />
+        <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)} hitSlop={8}>
+          <Text style={styles.legalLink}>Terms of Service</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Safe area bottom pad */}
+      <View style={{ height: 20 }} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: APP_PRIMARY,
+    alignItems: 'center',
+  },
+
+  topSpacer: { flex: 2 },
+  midSpacer: { height: 80 },
+  bottomSpacer: { flex: 3 },
+
+  brand: {
+    alignItems: 'center',
+    gap: 0,
+  },
+  icon: {
+    width: 71,
+    height: 95,
+  },
+  wordmark: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 4,
+  },
+
+  actions: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  actionLink: {
+    fontSize: 18,
+    color: '#fff',
+    textDecorationLine: 'underline',
+  },
+
+  legalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  legalLink: {
+    fontSize: 14,
+    color: '#fff',
+    textDecorationLine: 'underline',
+  },
+  legalDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#fff',
+  },
+});

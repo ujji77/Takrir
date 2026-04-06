@@ -15,7 +15,7 @@ import { useAuthStore } from '../store/auth';
 const PRIVACY_POLICY_URL = 'https://quran.com/privacy';
 const TERMS_URL = 'https://quran.com/terms';
 
-const TEAL = '#00cbbf';
+import { APP_PRIMARY } from '../theme';
 
 export default function HeaderMenu() {
   const [visible, setVisible] = useState(false);
@@ -34,7 +34,7 @@ export default function HeaderMenu() {
   return (
     <View>
       <TouchableOpacity onPress={() => setVisible(true)} hitSlop={12} style={styles.dotsBtn}>
-        <DotsThree size={24} color={TEAL} weight="bold" />
+        <DotsThree size={24} color={APP_PRIMARY} weight="bold" />
       </TouchableOpacity>
 
       <Modal

@@ -1,8 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HeaderMenu from './HeaderMenu';
-
-const TEAL = '#00cbbf';
+import { APP_PRIMARY } from '../theme';
 
 type Props = {
   chapterName: string;
@@ -66,7 +65,7 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 18,
-    color: TEAL,
+    color: APP_PRIMARY,
   },
   title: {
     fontSize: 16,
@@ -89,7 +88,7 @@ const styles = StyleSheet.create({
   chip: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: TEAL,
+    borderColor: APP_PRIMARY,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 10,
