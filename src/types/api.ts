@@ -16,14 +16,31 @@ export interface Chapter {
   translated_name: TranslatedName;
 }
 
+export type QuranFont =
+  | 'text_uthmani'
+  | 'text_indopak'
+  | 'text_imlaei'
+  | 'code_v1'
+  | 'code_v2';
+
+export interface VerseTranslation {
+  resource_id: number;
+  text: string;
+}
+
 export interface Verse {
   id: number;
   chapter_id: number;
   verse_number: number;
   verse_key: string;
   text_uthmani: string;
+  text_indopak?: string;
+  text_imlaei?: string;
+  code_v1?: string;
+  code_v2?: string;
   juz_number: number;
   page_number: number;
+  translations?: VerseTranslation[];
 }
 
 export interface Pagination {

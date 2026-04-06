@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -11,24 +11,15 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useChapters } from '../src/hooks/useChapters';
-import { useRecitations } from '../src/hooks/useRecitations';
-import { useSettingsStore } from '../src/store/settings';
 import type { Chapter } from '../src/types/api';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { data: chapters, isLoading, isError, error, refetch } = useChapters();
-  const { data: recitations } = useRecitations();
-  const recitationId = useSettingsStore((s) => s.recitationId);
 
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   const [fromVerse, setFromVerse] = useState('1');
   const [toVerse, setToVerse] = useState('');
-
-  const currentRecitation = useMemo(
-    () => recitations?.find((r) => r.id === recitationId),
-    [recitations, recitationId],
-  );
 
   const handleChapterSelect = (chapter: Chapter) => {
     setSelectedChapter(chapter);
@@ -65,17 +56,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Reciter selector */}
-      <TouchableOpacity style={styles.reciterRow} onPress={() => router.push('/reciter-picker')}>
-        <Text style={styles.reciterLabel}>Reciter</Text>
-        <Text style={styles.reciterValue}>
-          {currentRecitation
-            ? `${currentRecitation.reciter_name}${currentRecitation.style ? ` · ${currentRecitation.style}` : ''}`
-            : `ID ${recitationId}`}
-        </Text>
-        <Text style={styles.chevron}>›</Text>
-      </TouchableOpacity>
-
       {/* Chapter list */}
       <FlatList
         data={chapters}
@@ -134,17 +114,6 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 16, fontWeight: '600', color: '#e74c3c' },
   errorDetail: { fontSize: 13, color: '#888', textAlign: 'center' },
   emptyText: { padding: 24, textAlign: 'center', color: '#888' },
-  reciterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    backgroundColor: '#fafafa',
-  },
-  reciterLabel: { fontSize: 13, color: '#888', marginRight: 8 },
-  reciterValue: { flex: 1, fontSize: 15, fontWeight: '500' },
-  chevron: { fontSize: 20, color: '#999' },
   list: { flex: 1 },
   chapterRow: {
     flexDirection: 'row',

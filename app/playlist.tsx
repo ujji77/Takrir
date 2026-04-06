@@ -49,6 +49,7 @@ export default function PlaylistScreen() {
     return map;
   }, [audioFiles]);
 
+  // audioMap is kept for the "has audio" indicator in the UI
   const setRepeat = (verseKey: string, delta: number) => {
     setRepeatCounts((prev) => ({
       ...prev,

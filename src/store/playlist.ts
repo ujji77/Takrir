@@ -1,10 +1,22 @@
 import { create } from 'zustand';
-import { audioService } from '../audio/AudioService';
+import type { UseBoundStore, StoreApi } from 'zustand';
+import { ExpoAdapter } from '../audio/ExpoAdapter';
+import type { AudioPort } from '../audio/AudioPort';
+import { useSettingsStore } from './settings';
 
 export interface PlaylistItem {
   verseKey: string;
   url: string;
-  textUthmani: string;
+  /** All available font text variants. Player picks based on current font setting. */
+  texts: {
+    text_uthmani: string;
+    text_indopak?: string;
+    text_imlaei?: string;
+    code_v1?: string;
+    code_v2?: string;
+  };
+  /** Always populated from the API — display is controlled by showTranslation setting. */
+  translation: string | null;
   repeatCount: number;
 }
 
@@ -13,68 +25,95 @@ interface PlaylistState {
   currentIndex: number;
   currentRepeat: number;
   isPlaying: boolean;
-  showArabic: boolean;
 
   loadPlaylist: (items: PlaylistItem[]) => Promise<void>;
   advance: () => Promise<void>;
   togglePlay: () => void;
   skipTo: (index: number) => Promise<void>;
-  toggleArabic: () => void;
   stopAndReset: () => void;
 }
 
-export const usePlaylistStore = create<PlaylistState>((set, get) => ({
-  items: [],
-  currentIndex: 0,
-  currentRepeat: 0,
-  isPlaying: false,
-  showArabic: true,
+export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<PlaylistState>> {
+  return create<PlaylistState>((set, get) => {
+    let unsubFinish: (() => void) | null = null;
 
-  loadPlaylist: async (items) => {
-    if (items.length === 0) return;
-    await audioService.play(items[0].url, () => usePlaylistStore.getState().advance());
-    set({ items, currentIndex: 0, currentRepeat: 0, isPlaying: true });
-  },
-
-  advance: async () => {
-    const { items, currentIndex, currentRepeat } = get();
-    const current = items[currentIndex];
-    if (!current) return;
-
-    const playsLeft = current.repeatCount - 1 - currentRepeat;
-
-    if (playsLeft > 0) {
-      await audioService.play(current.url, () => usePlaylistStore.getState().advance());
-      set({ currentRepeat: currentRepeat + 1 });
-    } else {
-      const nextIndex = currentIndex + 1;
-      if (nextIndex >= items.length) {
-        audioService.destroy();
-        set({ isPlaying: false, currentIndex: 0, currentRepeat: 0 });
-        return;
-      }
-      await audioService.play(items[nextIndex].url, () => usePlaylistStore.getState().advance());
-      set({ currentIndex: nextIndex, currentRepeat: 0, isPlaying: true });
+    function subscribeFinish() {
+      unsubFinish?.();
+      unsubFinish = audio.onFinish(() => {
+        get().advance();
+      });
     }
-  },
 
-  togglePlay: () => {
-    const { isPlaying } = get();
-    audioService.setPaused(isPlaying);
-    set({ isPlaying: !isPlaying });
-  },
+    return {
+      items: [],
+      currentIndex: 0,
+      currentRepeat: 0,
+      isPlaying: false,
 
-  skipTo: async (index) => {
-    const { items } = get();
-    if (index < 0 || index >= items.length) return;
-    await audioService.play(items[index].url, () => usePlaylistStore.getState().advance());
-    set({ currentIndex: index, currentRepeat: 0, isPlaying: true });
-  },
+      loadPlaylist: async (items) => {
+        if (items.length === 0) return;
+        const rate = useSettingsStore.getState().playbackRate;
+        await audio.play(items[0].url, rate);
+        subscribeFinish();
+        set({ items, currentIndex: 0, currentRepeat: 0, isPlaying: true });
+      },
 
-  toggleArabic: () => set((state) => ({ showArabic: !state.showArabic })),
+      advance: async () => {
+        const { items, currentIndex, currentRepeat } = get();
+        const current = items[currentIndex];
+        if (!current) return;
 
-  stopAndReset: () => {
-    audioService.destroy();
-    set({ isPlaying: false, currentIndex: 0, currentRepeat: 0 });
-  },
-}));
+        const rate = useSettingsStore.getState().playbackRate;
+        const playsLeft = current.repeatCount - 1 - currentRepeat;
+
+        if (playsLeft > 0) {
+          await audio.play(current.url, rate);
+          subscribeFinish();
+          set({ currentRepeat: currentRepeat + 1 });
+        } else {
+          const nextIndex = currentIndex + 1;
+          if (nextIndex >= items.length) {
+            audio.stop();
+            unsubFinish?.();
+            unsubFinish = null;
+            set({ isPlaying: false, currentIndex: 0, currentRepeat: 0 });
+            return;
+          }
+          await audio.play(items[nextIndex].url, rate);
+          subscribeFinish();
+          set({ currentIndex: nextIndex, currentRepeat: 0, isPlaying: true });
+        }
+      },
+
+      togglePlay: () => {
+        const { isPlaying } = get();
+        if (isPlaying) {
+          audio.pause();
+        } else {
+          audio.resume();
+        }
+        set({ isPlaying: !isPlaying });
+      },
+
+      skipTo: async (index) => {
+        const { items } = get();
+        if (index < 0 || index >= items.length) return;
+        const rate = useSettingsStore.getState().playbackRate;
+        await audio.play(items[index].url, rate);
+        subscribeFinish();
+        set({ currentIndex: index, currentRepeat: 0, isPlaying: true });
+      },
+
+      stopAndReset: () => {
+        audio.stop();
+        unsubFinish?.();
+        unsubFinish = null;
+        set({ items: [], isPlaying: false, currentIndex: 0, currentRepeat: 0 });
+      },
+    };
+  });
+}
+
+const defaultStore = createPlaylistStore(new ExpoAdapter());
+
+export const usePlaylistStore = defaultStore;

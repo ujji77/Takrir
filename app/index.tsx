@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthRequest, exchangeCodeAsync, makeRedirectUri } from 'expo-auth-session';
 import { useAuthStore } from '../src/store/auth';
+import { useSettingsStore } from '../src/store/settings';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -47,6 +48,7 @@ export default function AuthScreen() {
     )
       .then((tokens) => {
         setToken(tokens.accessToken);
+        useSettingsStore.getState().loadCloudSettings().catch(() => null);
         router.replace('/home');
       })
       .catch(() => null);

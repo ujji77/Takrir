@@ -1,31 +1,33 @@
-import { useMemo } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, Button, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { usePlaylistStore } from '../src/store/playlist';
-import { useRecitations } from '../src/hooks/useRecitations';
-import { useSettingsStore } from '../src/store/settings';
+import { useSettingsStore, FONT_SCALE_SIZES } from '../src/store/settings';
+import SettingsPopover from '../src/components/SettingsPopover';
 
 export default function PlayerScreen() {
   const router = useRouter();
+  const [settingsVisible, setSettingsVisible] = useState(false);
+
   const items = usePlaylistStore((s) => s.items);
   const currentIndex = usePlaylistStore((s) => s.currentIndex);
   const currentRepeat = usePlaylistStore((s) => s.currentRepeat);
   const isPlaying = usePlaylistStore((s) => s.isPlaying);
-  const showArabic = usePlaylistStore((s) => s.showArabic);
   const togglePlay = usePlaylistStore((s) => s.togglePlay);
   const skipTo = usePlaylistStore((s) => s.skipTo);
-  const toggleArabic = usePlaylistStore((s) => s.toggleArabic);
   const stopAndReset = usePlaylistStore((s) => s.stopAndReset);
 
-  const recitationId = useSettingsStore((s) => s.recitationId);
-  const { data: recitations } = useRecitations();
+  const showArabic = useSettingsStore((s) => s.showArabic);
+  const showTranslation = useSettingsStore((s) => s.showTranslation);
+  const quranFont = useSettingsStore((s) => s.quranFont);
+  const fontScale = useSettingsStore((s) => s.fontScale);
 
   const currentItem = items[currentIndex];
-
-  const currentRecitation = useMemo(
-    () => recitations?.find((r) => r.id === recitationId),
-    [recitations, recitationId],
-  );
+  const arabicFontSize = FONT_SCALE_SIZES[fontScale];
+  const arabicText = currentItem
+    ? (currentItem.texts[quranFont] ?? currentItem.texts.text_uthmani)
+    : '';
 
   const handleBack = () => {
     stopAndReset();
@@ -43,23 +45,31 @@ export default function PlayerScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Reciter selector */}
-      <TouchableOpacity style={styles.reciterRow} onPress={() => router.push('/reciter-picker')}>
-        <Text style={styles.reciterLabel}>Reciter</Text>
-        <Text style={styles.reciterValue}>
-          {currentRecitation
-            ? `${currentRecitation.reciter_name}${currentRecitation.style ? ` · ${currentRecitation.style}` : ''}`
-            : `ID ${recitationId}`}
-        </Text>
-        <Text style={styles.chevron}>›</Text>
-      </TouchableOpacity>
+      <Stack.Screen
+        options={{
+          title: currentItem.verseKey,
+          headerLeft: () => (
+            <TouchableOpacity onPress={handleBack} hitSlop={8}>
+              <Text style={styles.headerBtn}>Close</Text>
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity onPress={() => setSettingsVisible(true)} hitSlop={8}>
+              <Text style={styles.headerBtn}>Settings</Text>
+            </TouchableOpacity>
+          ),
+        }}
+      />
 
       {/* Main display */}
       <View style={styles.main}>
-        <Text style={styles.verseKey}>{currentItem.verseKey}</Text>
-
         {showArabic && (
-          <Text style={styles.arabicText}>{currentItem.textUthmani}</Text>
+          <Text style={[styles.arabicText, { fontSize: arabicFontSize, lineHeight: arabicFontSize * 1.6 }]}>
+            {arabicText}
+          </Text>
+        )}
+        {showTranslation && currentItem.translation && (
+          <Text style={styles.translationText}>{currentItem.translation}</Text>
         )}
 
         <Text style={styles.repeatInfo}>
@@ -94,15 +104,6 @@ export default function PlayerScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Toggle Arabic */}
-      <View style={styles.footer}>
-        <Button
-          title={showArabic ? 'Hide Arabic' : 'Show Arabic'}
-          onPress={toggleArabic}
-        />
-        <Button title="Close" onPress={handleBack} />
-      </View>
-
       {/* Playlist mini-list */}
       <View style={styles.miniList}>
         {items.map((item, index) => (
@@ -118,6 +119,8 @@ export default function PlayerScreen() {
           </TouchableOpacity>
         ))}
       </View>
+
+      <SettingsPopover visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </View>
   );
 }
@@ -125,17 +128,7 @@ export default function PlayerScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
-  reciterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    backgroundColor: '#fafafa',
-  },
-  reciterLabel: { fontSize: 13, color: '#888', marginRight: 8 },
-  reciterValue: { flex: 1, fontSize: 15, fontWeight: '500' },
-  chevron: { fontSize: 20, color: '#999' },
+  headerBtn: { fontSize: 16, color: '#007AFF' },
   main: {
     flex: 1,
     justifyContent: 'center',
@@ -143,12 +136,16 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 16,
   },
-  verseKey: { fontSize: 18, fontWeight: '700', color: '#444' },
   arabicText: {
-    fontSize: 28,
     textAlign: 'center',
-    lineHeight: 48,
     color: '#222',
+  },
+  translationText: {
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 8,
   },
   repeatInfo: { fontSize: 14, color: '#888' },
   progress: { fontSize: 13, color: '#aaa' },
@@ -175,12 +172,6 @@ const styles = StyleSheet.create({
   },
   controlBtnDisabled: { opacity: 0.3 },
   controlBtnText: { fontSize: 24 },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
   miniList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
