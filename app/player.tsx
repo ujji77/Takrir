@@ -7,7 +7,6 @@ import {
   Image,
   Modal,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,7 +36,6 @@ import { useRecitations } from '../src/hooks/useRecitations';
 
 const TEAL = '#00cbbf';
 const TEAL_ACTIVE = '#a0eae5';
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const bismillahImg = require('../assets/bismillah.png');
 
 export default function PlayerScreen() {
@@ -124,12 +122,12 @@ export default function PlayerScreen() {
         </View>
       </View>
 
+      {/* Verse text area — fills space between header and anchored card */}
       <ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}
+        contentContainerStyle={styles.verseScroll}
       >
-        {/* Verse text area */}
         <View style={styles.verseArea}>
           <Text style={styles.verseKey}>{currentItem.verseKey}</Text>
           {showArabic && (
@@ -146,9 +144,10 @@ export default function PlayerScreen() {
             <Text style={styles.translationText}>{currentItem.translation}</Text>
           )}
         </View>
+      </ScrollView>
 
-        {/* Controls card — reciters revealed by scrolling down inside it */}
-        <View style={styles.card}>
+      {/* Controls card — anchored to bottom */}
+      <View style={[styles.card, { paddingBottom: insets.bottom + 30 }]}>
           {/* Playback controls + repeat badge */}
           <View style={styles.controlsRow}>
             <View style={styles.playbackControls}>
@@ -227,7 +226,7 @@ export default function PlayerScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Reciter section — inside the card, scroll down to reveal */}
+          {/* Reciter section — commented out
           <View style={styles.reciterSection}>
             <Text style={styles.sectionTitle}>Reciter</Text>
             <ScrollView
@@ -259,8 +258,8 @@ export default function PlayerScreen() {
               })}
             </ScrollView>
           </View>
+          */}
         </View>
-      </ScrollView>
 
       {/* Playlist bottom sheet */}
       <Modal
@@ -333,11 +332,13 @@ const styles = StyleSheet.create({
   },
 
   scroll: { flex: 1 },
+  verseScroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
 
   // Verse area
   verseArea: {
-    minHeight: SCREEN_HEIGHT * 0.38,
-    justifyContent: 'center',
     paddingHorizontal: 38,
     paddingVertical: 24,
     gap: 16,
