@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,16 +7,14 @@ import {
   StyleSheet,
   Linking,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as WebBrowser from 'expo-web-browser';
 import { useAuthRequest, exchangeCodeAsync, makeRedirectUri } from 'expo-auth-session';
 import { useAuthStore } from '../src/store/auth';
 import { APP_PRIMARY, SURFACE } from '../src/theme';
 import { useSettingsStore } from '../src/store/settings';
-
-WebBrowser.maybeCompleteAuthSession();
 
 const AUTH_URL = process.env.EXPO_PUBLIC_QURAN_AUTH_URL ?? 'https://oauth2.quran.foundation';
 const CLIENT_ID = process.env.EXPO_PUBLIC_QURAN_CLIENT_ID ?? '';
@@ -38,6 +37,7 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const setToken = useAuthStore((s) => s.setToken);
   const setGuest = useAuthStore((s) => s.setGuest);
+  const [signingIn, setSigningIn] = useState(false);
 
   const [request, response, promptAsync] = useAuthRequest(
     {
@@ -49,23 +49,43 @@ export default function AuthScreen() {
     discovery,
   );
 
-  if (response?.type === 'success' && response.params.code && request?.codeVerifier) {
-    exchangeCodeAsync(
-      {
-        clientId: CLIENT_ID,
-        code: response.params.code,
-        redirectUri,
-        extraParams: { code_verifier: request.codeVerifier },
-      },
-      discovery,
-    )
-      .then((tokens) => {
-        setToken(tokens.accessToken);
-        useSettingsStore.getState().loadCloudSettings().catch(() => null);
-        router.replace('/home');
-      })
-      .catch(() => null);
-  }
+  useEffect(() => {
+    if (!response) return;
+
+    if (response.type === 'error') {
+      setSigningIn(false);
+      Alert.alert(
+        'Sign in failed',
+        response.error?.message ?? response.params?.error_description ?? 'Something went wrong. Please try again.',
+      );
+      return;
+    }
+
+    if (response.type === 'success' && response.params.code && request?.codeVerifier) {
+      exchangeCodeAsync(
+        {
+          clientId: CLIENT_ID,
+          code: response.params.code,
+          redirectUri,
+          extraParams: { code_verifier: request.codeVerifier },
+        },
+        discovery,
+      )
+        .then((tokens) => {
+          setToken(tokens.accessToken);
+          useSettingsStore.getState().loadCloudSettings().catch(() => null);
+          router.replace('/home');
+        })
+        .catch((err) => {
+          setSigningIn(false);
+          Alert.alert('Sign in failed', err?.message ?? 'Could not complete sign in. Please try again.');
+        });
+      return;
+    }
+
+    // cancelled or dismissed — reset loading state
+    setSigningIn(false);
+  }, [response]);
 
   const handleGuest = () => {
     setGuest();
@@ -85,11 +105,11 @@ export default function AuthScreen() {
 
       <View style={styles.actions}>
         <TouchableOpacity
-          onPress={() => promptAsync()}
-          disabled={!request}
+          onPress={() => { setSigningIn(true); promptAsync(); }}
+          disabled={!request || signingIn}
           hitSlop={10}
         >
-          {!request
+          {!request || signingIn
             ? <ActivityIndicator color={SURFACE} />
             : <Text style={styles.actionLink}>Sign in</Text>
           }
