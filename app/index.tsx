@@ -20,8 +20,8 @@ WebBrowser.maybeCompleteAuthSession();
 const AUTH_URL = process.env.EXPO_PUBLIC_QURAN_AUTH_URL ?? 'https://oauth2.quran.foundation';
 const CLIENT_ID = process.env.EXPO_PUBLIC_QURAN_CLIENT_ID ?? '';
 
-const PRIVACY_URL = 'https://takrir.app/privacy';
-const TERMS_URL = 'https://takrir.app/terms';
+const PRIVACY_URL = 'https://takrir-web.spatialuzair.workers.dev/privacy';
+const TERMS_URL = 'https://takrir-web.spatialuzair.workers.dev/terms';
 
 const discovery = {
   authorizationEndpoint: `${AUTH_URL}/oauth2/auth`,
