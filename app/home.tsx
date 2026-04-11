@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,9 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CaretRight } from 'phosphor-react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useChapters } from '../src/hooks/useChapters';
 import AppHeader from '../src/components/AppHeader';
@@ -19,6 +19,7 @@ import {
   APP_PRIMARY,
   SURFACE,
   SURFACE_SCREEN,
+  SURFACE_FROSTED,
   SURFACE_INPUT,
   BORDER,
   TEXT_HEADING,
@@ -40,6 +41,8 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [search, setSearch] = useState('');
 
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
   const filteredChapters =
     chapters?.filter(
       (c) =>
@@ -56,17 +59,18 @@ export default function HomeScreen() {
     setSearch('');
   };
 
+  const handleBack = () => {
+    setSelectedChapter(null);
+    setFromVerse('');
+    setToVerse('');
+    router.replace('/');
+  };
+
   const handleAddDetail = () => {
     if (!selectedChapter) return;
     const from = parseInt(fromVerse, 10);
     const to = parseInt(toVerse, 10);
-    if (
-      isNaN(from) ||
-      isNaN(to) ||
-      from < 1 ||
-      to > selectedChapter.verses_count ||
-      from > to
-    )
+    if (isNaN(from) || isNaN(to) || from < 1 || to > selectedChapter.verses_count || from > to)
       return;
     router.push({ pathname: '/playlist', params: { chapter: selectedChapter.id, from, to } });
   };
@@ -76,22 +80,42 @@ export default function HomeScreen() {
     fromVerse.length > 0 &&
     toVerse.length > 0;
 
+  useEffect(() => {
+    if (canProceed) {
+      Animated.timing(glowAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      glowAnim.setValue(0);
+    }
+  }, [canProceed]);
+
+  const animatedShadowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.9],
+  });
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <AppHeader title="Welcome to Takrir" />
-      <View style={styles.card}>
+      <AppHeader title="" onBack={handleBack} />
+
+      <View style={styles.content}>
+        <Text style={styles.heading}>What do you want{'\n'}to memorise?</Text>
+
         <View style={styles.sentenceRow}>
           <View style={styles.labelWrap}>
             <Text style={styles.label}>I am learning surah</Text>
           </View>
 
           <TouchableOpacity
-            style={styles.surahBox}
+            style={styles.surahPill}
             onPress={() => setModalVisible(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.boxText} numberOfLines={1}>
+            <Text style={styles.pillText} numberOfLines={1}>
               {selectedChapter ? selectedChapter.name_simple : 'Select'}
             </Text>
           </TouchableOpacity>
@@ -100,7 +124,7 @@ export default function HomeScreen() {
             <Text style={styles.label}>verses</Text>
           </View>
 
-          <View style={styles.verseBox}>
+          <View style={styles.versePill}>
             <TextInput
               style={styles.verseInput}
               value={fromVerse}
@@ -117,7 +141,7 @@ export default function HomeScreen() {
             <Text style={styles.label}>to</Text>
           </View>
 
-          <View style={styles.verseBox}>
+          <View style={styles.versePill}>
             <TextInput
               style={styles.verseInput}
               value={toVerse}
@@ -130,21 +154,33 @@ export default function HomeScreen() {
             />
           </View>
         </View>
-
-        {selectedChapter && (
-          <View style={styles.continueRow}>
-            <TouchableOpacity
-              style={[styles.continueBtn, !canProceed && styles.continueBtnDisabled]}
-              onPress={handleAddDetail}
-              disabled={!canProceed}
-              activeOpacity={0.8}
-            >
-              <CaretRight size={22} color={SURFACE} weight="bold" />
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
+      {/* Create playlist button — pinned to bottom */}
+      <View style={styles.ctaWrap}>
+        <Animated.View
+          style={[
+            styles.ctaButton,
+            {
+              shadowOpacity: animatedShadowOpacity,
+              borderColor: canProceed ? APP_PRIMARY : 'transparent',
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.ctaInner}
+            onPress={handleAddDetail}
+            disabled={!canProceed}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.ctaText, !canProceed && styles.ctaTextDisabled]}>
+              Create playlist
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+
+      {/* Surah picker modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -211,80 +247,108 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: SURFACE_SCREEN,
   },
-  card: {
+
+  content: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-    gap: 16,
+    paddingHorizontal: 30,
+    paddingTop: 36,
   },
+
+  heading: {
+    fontSize: 30,
+    fontWeight: '600',
+    color: TEXT_HEADING,
+    marginBottom: 40,
+    lineHeight: 38,
+  },
+
   sentenceRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    alignSelf: 'center',
     gap: 10,
-    maxWidth: 340,
-    width: '100%',
   },
+
   labelWrap: {
     paddingVertical: 10,
   },
+
   label: {
     fontSize: 20,
     fontWeight: '500',
-    color: TEXT_HEADING,
+    color: TEXT_BODY,
   },
-  surahBox: {
-    backgroundColor: SURFACE,
-    borderWidth: 1,
+
+  surahPill: {
+    backgroundColor: SURFACE_FROSTED,
+    borderWidth: 0.5,
     borderColor: APP_PRIMARY,
-    borderRadius: 8,
+    borderRadius: 28,
     paddingVertical: 10,
-    paddingHorizontal: 10,
-    width: 140,
+    paddingHorizontal: 14,
+    maxWidth: 160,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  boxText: {
+
+  versePill: {
+    backgroundColor: SURFACE_FROSTED,
+    borderWidth: 0.5,
+    borderColor: APP_PRIMARY,
+    borderRadius: 28,
+    width: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  pillText: {
     fontSize: 20,
     color: TEXT_BODY,
     textAlign: 'center',
   },
-  verseBox: {
-    backgroundColor: SURFACE,
-    borderWidth: 1,
-    borderColor: APP_PRIMARY,
-    borderRadius: 8,
-    width: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
   verseInput: {
     fontSize: 20,
     color: TEXT_BODY,
     paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     width: '100%',
     textAlign: 'center',
   },
-  continueRow: {
-    alignItems: 'flex-end',
-    alignSelf: 'center',
-    maxWidth: 340,
-    width: '100%',
-    paddingRight: 4,
+
+  // CTA button
+  ctaWrap: {
+    alignItems: 'center',
+    paddingBottom: 40,
+    paddingHorizontal: 30,
   },
-  continueBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 60,
-    backgroundColor: APP_PRIMARY,
+
+  ctaButton: {
+    width: '100%',
+    height: 56,
+    borderRadius: 30,
+    backgroundColor: SURFACE,
+    borderWidth: 1.5,
+    shadowColor: APP_PRIMARY,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 8,
+    elevation: 6,
+  },
+
+  ctaInner: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  continueBtnDisabled: {
-    opacity: 0.4,
+
+  ctaText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: TEXT_BODY,
+  },
+
+  ctaTextDisabled: {
+    color: TEXT_PLACEHOLDER,
   },
 
   // Modal

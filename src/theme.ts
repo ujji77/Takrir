@@ -1,7 +1,8 @@
 // ─── Brand colours ───────────────────────────────────────────────────────────
 export const APP_PRIMARY        = '#00cbbf';
 export const APP_PRIMARY_ACTIVE = '#a0eae5'; // active chips / highlights / disabled states
-export const APP_PRIMARY_LIGHT  = '#77E1DB'; // reserved — not currently in use
+export const APP_PRIMARY_LIGHT  = '#77E1DB'; // lighter tint
+export const APP_PRIMARY_DEEP   = '#004a45'; // deep dark teal — gradient anchor
 
 // ─── Surfaces ────────────────────────────────────────────────────────────────
 export const SURFACE        = '#ffffff';              // cards, sheets, modals, inputs
