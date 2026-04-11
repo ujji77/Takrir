@@ -6,6 +6,7 @@ import { useSettingsStore } from './settings';
 
 export interface PlaylistItem {
   verseKey: string;
+  chapterName: string;
   /** Audio URLs keyed by recitation ID — pre-fetched for all supported reciters. */
   audioUrls: Record<number, string>;
   text_uthmani: string;
@@ -36,6 +37,14 @@ function resolveUrl(item: PlaylistItem): string {
   return item.audioUrls[reciterId] ?? Object.values(item.audioUrls)[0] ?? '';
 }
 
+function metaFor(item: PlaylistItem) {
+  const [, verseNum] = item.verseKey.split(':');
+  return {
+    title: `${item.chapterName} • Verse ${verseNum}`,
+    artist: 'Quran',
+  };
+}
+
 export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<PlaylistState>> {
   const store = create<PlaylistState>((set, get) => {
     let unsubFinish: (() => void) | null = null;
@@ -55,7 +64,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
       const url = resolveUrl(items[currentIndex]);
       if (!url) return;
       const rate = useSettingsStore.getState().playbackRate;
-      const played = await audio.play(url, rate);
+      const played = await audio.play(url, rate, metaFor(items[currentIndex]));
       if (!played) return;
       subscribeFinish();
     });
@@ -70,7 +79,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
       loadPlaylist: async (items) => {
         if (items.length === 0) return;
         const rate = useSettingsStore.getState().playbackRate;
-        const played = await audio.play(resolveUrl(items[0]), rate);
+        const played = await audio.play(resolveUrl(items[0]), rate, metaFor(items[0]));
         if (!played) return;
         subscribeFinish();
         set({ items, currentIndex: 0, currentRepeat: 0, isPlaying: true });
@@ -85,7 +94,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
         const playsLeft = current.repeatCount - 1 - currentRepeat;
 
         if (playsLeft > 0) {
-          const played = await audio.play(resolveUrl(current), rate);
+          const played = await audio.play(resolveUrl(current), rate, metaFor(current));
           if (!played) return;
           subscribeFinish();
           set({ currentRepeat: currentRepeat + 1 });
@@ -95,7 +104,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
             if (get().repeatPlaylist && items.length > 0) {
               const firstUrl = resolveUrl(items[0]);
               if (!firstUrl) return;
-              const played = await audio.play(firstUrl, rate);
+              const played = await audio.play(firstUrl, rate, metaFor(items[0]));
               if (!played) return;
               subscribeFinish();
               set({ currentIndex: 0, currentRepeat: 0, isPlaying: true });
@@ -107,7 +116,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
             }
             return;
           }
-          const played = await audio.play(resolveUrl(items[nextIndex]), rate);
+          const played = await audio.play(resolveUrl(items[nextIndex]), rate, metaFor(items[nextIndex]));
           if (!played) return;
           subscribeFinish();
           set({ currentIndex: nextIndex, currentRepeat: 0, isPlaying: true });
@@ -131,7 +140,7 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
         unsubFinish?.();
         unsubFinish = null;
         const rate = useSettingsStore.getState().playbackRate;
-        const played = await audio.play(resolveUrl(items[index]), rate);
+        const played = await audio.play(resolveUrl(items[index]), rate, metaFor(items[index]));
         if (!played) return;
         subscribeFinish();
         set({ currentIndex: index, currentRepeat: 0, isPlaying: true });

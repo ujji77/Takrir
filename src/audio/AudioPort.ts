@@ -1,7 +1,12 @@
+export interface TrackMeta {
+  title: string;
+  artist?: string;
+}
+
 /** Stable port interface for audio playback. Swap adapters for production vs test vs CI. */
 export interface AudioPort {
   /** Start playback at the given rate. Returns false if the call was superseded by a newer play(). */
-  play(url: string, rate: number): Promise<boolean>;
+  play(url: string, rate: number, meta?: TrackMeta): Promise<boolean>;
   pause(): void;
   resume(): void;
   /** Change playback speed of the currently loaded track. */

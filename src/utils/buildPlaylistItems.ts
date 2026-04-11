@@ -7,6 +7,7 @@ export function buildPlaylistItems(
   fromVerse: number,
   toVerse: number,
   repeatCounts: Record<string, number>,
+  chapterName: string,
 ): PlaylistItem[] {
   // Build a lookup map per reciter: verseKey → url
   const audioMaps: Record<number, Map<string, string>> = {};
@@ -24,6 +25,7 @@ export function buildPlaylistItems(
       }
       return {
         verseKey: verse.verse_key,
+        chapterName,
         audioUrls,
         text_uthmani: verse.text_uthmani,
         text_indopak: verse.text_indopak ?? null,

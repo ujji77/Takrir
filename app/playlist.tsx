@@ -71,6 +71,7 @@ export default function PlaylistScreen() {
       fromVerse,
       toVerse,
       repeatCounts,
+      chapter?.name_simple ?? `Surah ${chapterNumber}`,
     );
     loadPlaylist(playlistItems).then(() => router.push('/player'));
   };

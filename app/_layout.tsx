@@ -19,8 +19,14 @@ export default function RootLayout() {
     TrackPlayer.setupPlayer({ autoHandleInterruptions: true })
       .then(() =>
         TrackPlayer.updateOptions({
-          capabilities: [Capability.Play, Capability.Pause, Capability.Stop],
-          compactCapabilities: [Capability.Play, Capability.Pause],
+          capabilities: [
+            Capability.Play,
+            Capability.Pause,
+            Capability.SkipToNext,
+            Capability.SkipToPrevious,
+            Capability.Stop,
+          ],
+          compactCapabilities: [Capability.SkipToPrevious, Capability.Play, Capability.Pause, Capability.SkipToNext],
         }),
       )
       .catch(() => null); // Ignore "already setup" error on hot reload

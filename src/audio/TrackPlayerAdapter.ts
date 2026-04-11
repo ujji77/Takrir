@@ -1,5 +1,5 @@
 import TrackPlayer, { Event } from 'react-native-track-player';
-import type { AudioPort } from './AudioPort';
+import type { AudioPort, TrackMeta } from './AudioPort';
 
 export class TrackPlayerAdapter implements AudioPort {
   private finishCb: (() => void) | null = null;
@@ -11,7 +11,7 @@ export class TrackPlayerAdapter implements AudioPort {
     });
   }
 
-  async play(url: string, rate: number): Promise<boolean> {
+  async play(url: string, rate: number, meta?: TrackMeta): Promise<boolean> {
     const id = ++this.playId;
     // Clear before reset so a queued PlaybackQueueEnded can't fire the old callback.
     this.finishCb = null;
@@ -19,7 +19,11 @@ export class TrackPlayerAdapter implements AudioPort {
     await TrackPlayer.reset();
     if (id !== this.playId) return false;
 
-    await TrackPlayer.add({ url, title: 'Quran', artist: '' });
+    await TrackPlayer.add({
+      url,
+      title: meta?.title ?? 'Quran',
+      artist: meta?.artist ?? 'Quran',
+    });
     if (id !== this.playId) {
       TrackPlayer.reset();
       return false;
