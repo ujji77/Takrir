@@ -29,6 +29,7 @@ interface PlaylistState {
   skipTo: (index: number) => Promise<void>;
   applyPlaybackRate: (rate: number) => void;
   toggleRepeatPlaylist: () => void;
+  setRepeatCount: (verseKey: string, count: number) => void;
   stopAndReset: () => void;
 }
 
@@ -152,6 +153,14 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
 
       toggleRepeatPlaylist: () => {
         set((s) => ({ repeatPlaylist: !s.repeatPlaylist }));
+      },
+
+      setRepeatCount: (verseKey, count) => {
+        set((s) => ({
+          items: s.items.map((item) =>
+            item.verseKey === verseKey ? { ...item, repeatCount: Math.max(1, count) } : item,
+          ),
+        }));
       },
 
       stopAndReset: () => {

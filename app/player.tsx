@@ -74,6 +74,7 @@ export default function PlayerScreen() {
   const stopAndReset = usePlaylistStore((s) => s.stopAndReset);
   const repeatPlaylist = usePlaylistStore((s) => s.repeatPlaylist);
   const toggleRepeatPlaylist = usePlaylistStore((s) => s.toggleRepeatPlaylist);
+  const setRepeatCount = usePlaylistStore((s) => s.setRepeatCount);
 
   const showArabic = useSettingsStore((s) => s.showArabic);
   const quranFont = useSettingsStore((s) => s.quranFont);
@@ -303,24 +304,42 @@ export default function PlayerScreen() {
         />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.sheetHandle} />
+
           <Text style={styles.sheetTitle}>Playlist</Text>
-          <ScrollView
-            contentContainerStyle={styles.chipGrid}
-            keyboardShouldPersistTaps="handled"
-          >
+
+          {/* Column headers */}
+          <View style={styles.playlistColHeader}>
+            <Text style={styles.playlistColLabel}>Verse</Text>
+            <Text style={styles.playlistColLabel}>Repeats</Text>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
             {items.map((item, index) => (
-              <TouchableOpacity
-                key={item.verseKey}
-                onPress={() => {
-                  skipTo(index);
-                  setPlaylistVisible(false);
-                }}
-                style={[styles.chip, index === currentIndex && styles.chipActive]}
-              >
-                <Text style={styles.chipText}>
-                  {item.verseKey} (x{item.repeatCount})
-                </Text>
-              </TouchableOpacity>
+              <View key={item.verseKey}>
+                <View style={styles.playlistRow}>
+                  <TouchableOpacity
+                    onPress={() => { skipTo(index); setPlaylistVisible(false); }}
+                    hitSlop={8}
+                  >
+                    <Text style={[styles.playlistVerseKey, index === currentIndex && styles.playlistVerseKeyActive]}>
+                      {item.verseKey}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.stepper}>
+                    <TouchableOpacity onPress={() => setRepeatCount(item.verseKey, item.repeatCount - 1)} hitSlop={10}>
+                      <Text style={styles.stepperBtn}>−</Text>
+                    </TouchableOpacity>
+                    <View style={styles.stepperBadge}>
+                      <Text style={styles.stepperCount}>{item.repeatCount}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => setRepeatCount(item.verseKey, item.repeatCount + 1)} hitSlop={10}>
+                      <Text style={styles.stepperBtn}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={styles.playlistDivider} />
+              </View>
             ))}
           </ScrollView>
         </View>
@@ -475,10 +494,12 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: OVERLAY },
   sheet: {
     backgroundColor: SURFACE,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '60%',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    maxHeight: '65%',
     paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
   },
   sheetHandle: {
     width: 36,
@@ -492,26 +513,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: TEXT_PRIMARY,
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  chipGrid: {
+  playlistColHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    gap: 8,
-    paddingBottom: 8,
-  },
-  chip: {
-    height: 31,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: BORDER_STRONG,
-    backgroundColor: SURFACE,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    marginBottom: 8,
   },
-  chipActive: { backgroundColor: APP_PRIMARY_ACTIVE },
-  chipText: { fontSize: 13, color: TEXT_BODY },
+  playlistColLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: TEXT_MUTED,
+  },
+  playlistRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  playlistDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: BORDER_STRONG,
+  },
+  playlistVerseKey: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: TEXT_PRIMARY,
+  },
+  playlistVerseKeyActive: {
+    color: APP_PRIMARY,
+    fontWeight: '600',
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stepperBtn: {
+    fontSize: 16,
+    color: TEXT_MUTED,
+    paddingHorizontal: 4,
+  },
+  stepperBadge: {
+    borderWidth: 1,
+    borderColor: APP_PRIMARY,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    minWidth: 26,
+    alignItems: 'center',
+    backgroundColor: SURFACE,
+  },
+  stepperCount: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: TEXT_PRIMARY,
+  },
 });
