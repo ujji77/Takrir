@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Eye,
   EyeSlash,
-  ArrowFatLinesUp,
+  TextAa,
   Translate,
   Queue,
   CaretLeft,
@@ -191,7 +191,7 @@ export default function PlayerScreen() {
               {showArabic ? <Eye size={24} color={APP_PRIMARY} /> : <EyeSlash size={24} color={APP_PRIMARY} />}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => selectDrawer('fontSize')} hitSlop={10} style={{ opacity: activeDrawer === 'fontSize' ? 1 : 0.6 }}>
-              <ArrowFatLinesUp size={24} color={APP_PRIMARY} />
+              <TextAa size={24} color={APP_PRIMARY} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => selectDrawer('font')} hitSlop={10} style={{ opacity: activeDrawer === 'font' ? 1 : 0.6 }}>
               <Translate size={24} color={APP_PRIMARY} />
