@@ -41,7 +41,7 @@
     "newArchEnabled": true,
     "plugins": [
       "expo-router",
-      "expo-audio",
+      "react-native-track-player",
       "expo-web-browser",
       "expo-secure-store"
     ],

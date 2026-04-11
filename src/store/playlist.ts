@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { UseBoundStore, StoreApi } from 'zustand';
-import { ExpoAdapter } from '../audio/ExpoAdapter';
+import { TrackPlayerAdapter } from '../audio/TrackPlayerAdapter';
 import type { AudioPort } from '../audio/AudioPort';
 import { useSettingsStore } from './settings';
 
@@ -157,5 +157,5 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
   return store;
 }
 
-const defaultStore = createPlaylistStore(new ExpoAdapter());
+const defaultStore = createPlaylistStore(new TrackPlayerAdapter());
 export const usePlaylistStore = defaultStore;
