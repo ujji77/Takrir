@@ -16,7 +16,7 @@
       "env": {
         "EXPO_PUBLIC_QURAN_CLIENT_ID": "e3b36758-5c9b-47dc-a150-09d8c6fd7299",
         "EXPO_PUBLIC_QURAN_BASE_URL": "https://api.quran.com/api/v4",
-        "EXPO_PUBLIC_QURAN_AUTH_URL": "https://oauth2.quran.foundation"
+        "EXPO_PUBLIC_QURAN_AUTH_URL": "https://oauth2.quran.foundation",
       }
     }
   },
