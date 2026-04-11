@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   verseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 20,
   },
   verseNumber: {
     fontSize: 14,
