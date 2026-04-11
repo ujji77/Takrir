@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { useChapters } from '../src/hooks/useChapters';
 import AppHeader from '../src/components/AppHeader';
@@ -40,6 +39,7 @@ export default function HomeScreen() {
   const [toVerse, setToVerse] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [search, setSearch] = useState('');
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const glowAnim = useRef(new Animated.Value(0)).current;
 
@@ -100,7 +100,9 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <AppHeader title="" onBack={handleBack} />
+      <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
+        <AppHeader title="" onBack={handleBack} />
+      </View>
 
       <View style={styles.content}>
         <Text style={styles.heading}>What do you want{'\n'}to memorise?</Text>
@@ -184,9 +186,15 @@ export default function HomeScreen() {
       <Modal
         visible={modalVisible}
         animationType="slide"
+        transparent
         onRequestClose={() => setModalVisible(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        />
+        <View style={[styles.modalSheet, { marginTop: headerHeight }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Choose Surah</Text>
             <TouchableOpacity onPress={() => setModalVisible(false)} hitSlop={8}>
@@ -236,7 +244,7 @@ export default function HomeScreen() {
               )}
             />
           )}
-        </SafeAreaView>
+        </View>
       </Modal>
     </View>
   );
@@ -352,7 +360,7 @@ const styles = StyleSheet.create({
   },
 
   // Modal
-  modalContainer: {
+  modalSheet: {
     flex: 1,
     backgroundColor: SURFACE,
   },
