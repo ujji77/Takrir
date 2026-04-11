@@ -41,7 +41,7 @@
     "newArchEnabled": true,
     "plugins": [
       "expo-router",
-"expo-web-browser",
+      "expo-web-browser",
       "expo-secure-store"
     ],
     "extra": {
@@ -49,6 +49,12 @@
       "eas": {
         "projectId": "93ed909b-9bb4-4d33-9446-84c5ad55aede"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/93ed909b-9bb4-4d33-9446-84c5ad55aede"
     }
   }
 }
