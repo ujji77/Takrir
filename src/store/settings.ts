@@ -117,7 +117,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       ]);
 
     const updates: Partial<SettingsState> = {};
-    if (recitationId) updates.recitationId = Number(recitationId);
+    if (recitationId && (SUPPORTED_RECITATION_IDS as readonly number[]).includes(Number(recitationId))) updates.recitationId = Number(recitationId);
     if (quranFont && QURAN_FONTS.includes(quranFont as QuranFont)) updates.quranFont = quranFont as QuranFont;
     if (fontScale && FONT_SCALES.includes(fontScale as FontScale)) updates.fontScale = fontScale as FontScale;
     if (playbackRate) updates.playbackRate = Number(playbackRate);
@@ -139,7 +139,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const enableAutoScrolling = get_pref('enable_auto_scrolling');
 
     const updates: Partial<SettingsState> = {};
-    if (recitationId) updates.recitationId = Number(recitationId);
+    if (recitationId && (SUPPORTED_RECITATION_IDS as readonly number[]).includes(Number(recitationId))) updates.recitationId = Number(recitationId);
     if (quranFont && QURAN_FONTS.includes(quranFont as QuranFont)) updates.quranFont = quranFont as QuranFont;
     if (fontScale && FONT_SCALES.includes(fontScale as FontScale)) updates.fontScale = fontScale as FontScale;
     if (enableAutoScrolling !== undefined) updates.enableAutoScrolling = enableAutoScrolling === 'true';

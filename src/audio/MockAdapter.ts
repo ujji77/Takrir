@@ -11,9 +11,10 @@ export class MockAdapter implements AudioPort {
   calls: AudioCall[] = [];
   private finishCb: (() => void) | null = null;
 
-  async play(url: string, rate: number): Promise<void> {
+  async play(url: string, rate: number): Promise<boolean> {
     this.calls.push({ type: 'play', url, rate });
     this.finishCb = null;
+    return true;
   }
 
   pause(): void {

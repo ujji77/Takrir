@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthRequest, exchangeCodeAsync, makeRedirectUri } from 'expo-auth-session';
 import { useAuthStore } from '../src/store/auth';
-import { APP_PRIMARY } from '../src/theme';
+import { APP_PRIMARY, SURFACE } from '../src/theme';
 import { useSettingsStore } from '../src/store/settings';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -74,19 +74,15 @@ export default function AuthScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* Top spacer */}
       <View style={styles.topSpacer} />
 
-      {/* Logo + wordmark */}
       <View style={styles.brand}>
         <Image source={iconImg} style={styles.icon} resizeMode="contain" />
         <Text style={styles.wordmark}>Takrir</Text>
       </View>
 
-      {/* Mid spacer */}
       <View style={styles.midSpacer} />
 
-      {/* Auth actions */}
       <View style={styles.actions}>
         <TouchableOpacity
           onPress={() => promptAsync()}
@@ -94,7 +90,7 @@ export default function AuthScreen() {
           hitSlop={10}
         >
           {!request
-            ? <ActivityIndicator color="#fff" />
+            ? <ActivityIndicator color={SURFACE} />
             : <Text style={styles.actionLink}>Sign in</Text>
           }
         </TouchableOpacity>
@@ -104,10 +100,8 @@ export default function AuthScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom spacer */}
       <View style={styles.bottomSpacer} />
 
-      {/* Legal links */}
       <View style={styles.legalRow}>
         <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={8}>
           <Text style={styles.legalLink}>Privacy Policy</Text>
@@ -118,7 +112,6 @@ export default function AuthScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Safe area bottom pad */}
       <View style={{ height: 20 }} />
     </View>
   );
@@ -146,7 +139,7 @@ const styles = StyleSheet.create({
   wordmark: {
     fontSize: 28,
     fontWeight: '600',
-    color: '#fff',
+    color: SURFACE,
     marginTop: 4,
   },
 
@@ -156,7 +149,7 @@ const styles = StyleSheet.create({
   },
   actionLink: {
     fontSize: 18,
-    color: '#fff',
+    color: SURFACE,
     textDecorationLine: 'underline',
   },
 
@@ -167,12 +160,12 @@ const styles = StyleSheet.create({
   },
   legalLink: {
     fontSize: 14,
-    color: '#fff',
+    color: SURFACE,
     textDecorationLine: 'underline',
   },
   legalDivider: {
     width: 1,
     height: 16,
-    backgroundColor: '#fff',
+    backgroundColor: SURFACE,
   },
 });

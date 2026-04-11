@@ -18,6 +18,18 @@ import {
   type QuranFont,
   type FontScale,
 } from '../store/settings';
+import {
+  APP_PRIMARY,
+  APP_PRIMARY_ACTIVE,
+  SURFACE,
+  OVERLAY,
+  BORDER,
+  HANDLE,
+  TEXT_BODY,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+  TEXT_PLACEHOLDER,
+} from '../theme';
 
 const FONT_LABELS: Record<QuranFont, string> = {
   text_uthmani: 'Uthmani',
@@ -164,10 +176,10 @@ export default function SettingsPopover({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: OVERLAY,
   },
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: SURFACE,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: '70%',
@@ -175,7 +187,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 36,
     height: 4,
-    backgroundColor: '#ddd',
+    backgroundColor: HANDLE,
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: 8,
@@ -186,29 +198,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: BORDER,
   },
   title: { fontSize: 17, fontWeight: '600' },
   closeBtn: { padding: 4 },
-  closeBtnText: { fontSize: 16, color: '#007AFF', fontWeight: '500' },
+  closeBtnText: { fontSize: 16, color: APP_PRIMARY, fontWeight: '500' },
   backRow: {
     padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: BORDER,
   },
-  backText: { fontSize: 16, color: '#007AFF' },
+  backText: { fontSize: 16, color: APP_PRIMARY },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: BORDER,
   },
-  rowActive: { backgroundColor: '#f0f8ff' },
-  rowLabel: { fontSize: 16, color: '#222' },
-  rowLabelActive: { fontWeight: '600', color: '#007AFF' },
+  rowActive: { backgroundColor: APP_PRIMARY_ACTIVE },
+  rowLabel: { fontSize: 16, color: TEXT_BODY },
+  rowLabelActive: { fontWeight: '600', color: APP_PRIMARY },
   rowValue: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  rowValueText: { fontSize: 15, color: '#888' },
-  rowChevron: { fontSize: 18, color: '#ccc' },
+  rowValueText: { fontSize: 15, color: TEXT_SECONDARY },
+  rowChevron: { fontSize: 18, color: TEXT_PLACEHOLDER },
 });

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts } from 'expo-font';
 import { useSettingsStore } from '../src/store/settings';
 
 const queryClient = new QueryClient();
@@ -9,6 +10,8 @@ const queryClient = new QueryClient();
 useSettingsStore.getState().loadPersistedSettings();
 
 export default function RootLayout() {
+  useFonts({ 'pdms-saleem-quranfont': require('../assets/fonts/pdms-saleem-quranfont.ttf') });
+
   useEffect(() => {
     const interval = setInterval(() => {
       useSettingsStore.getState().flushToCloud().catch(() => null);

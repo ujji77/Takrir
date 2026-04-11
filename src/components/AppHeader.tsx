@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HeaderMenu from './HeaderMenu';
-import { APP_PRIMARY } from '../theme';
+import { APP_PRIMARY, SURFACE, SHADOW, TEXT_HEADING } from '../theme';
 
 type Props = {
   title: string;
@@ -31,10 +31,10 @@ export default function AppHeader({ title, onBack }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: SURFACE,
     paddingBottom: 16,
     paddingHorizontal: 30,
-    shadowColor: '#000',
+    shadowColor: SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: TEXT_HEADING,
     textAlign: 'center',
     flex: 1,
   },

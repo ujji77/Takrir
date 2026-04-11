@@ -1,9 +1,28 @@
-// ─── Brand colour ────────────────────────────────────────────────────────────
-// Change APP_PRIMARY here to test a different accent colour across the whole app.
-export const APP_PRIMARY = '#00cbbf';
+// ─── Brand colours ───────────────────────────────────────────────────────────
+export const APP_PRIMARY        = '#00cbbf';
+export const APP_PRIMARY_ACTIVE = '#a0eae5'; // active chips / highlights / disabled states
+export const APP_PRIMARY_LIGHT  = '#77E1DB'; // reserved — not currently in use
 
-// Derived tones — kept in sync automatically.
-// APP_PRIMARY_ACTIVE: light tint used for active chips / highlights.
-export const APP_PRIMARY_ACTIVE = '#a0eae5';
-// APP_PRIMARY_LIGHT: softer variant used for the circular continue button on home.
-export const APP_PRIMARY_LIGHT = '#77E1DB';
+// ─── Surfaces ────────────────────────────────────────────────────────────────
+export const SURFACE        = '#ffffff';              // cards, sheets, modals, inputs
+export const SURFACE_SCREEN = '#fafafa';              // page / screen background
+export const SURFACE_INPUT  = '#f4f4f4';              // text input fields
+export const SURFACE_FROSTED = 'rgba(255,255,255,0.9)'; // frosted / translucent card
+
+// ─── Borders & dividers ──────────────────────────────────────────────────────
+export const BORDER        = '#eeeeee'; // standard hairline border / divider
+export const BORDER_STRONG = '#e0e0e0'; // stronger separator / divider
+export const HANDLE        = '#dddddd'; // bottom-sheet drag handle
+
+// ─── Text scale (light → dark) ───────────────────────────────────────────────
+export const TEXT_PLACEHOLDER = '#aaaaaa'; // input placeholders, muted decorative elements
+export const TEXT_TERTIARY    = '#999999'; // index numbers, least-emphasis labels
+export const TEXT_SECONDARY   = '#888888'; // captions, metadata, subtitles
+export const TEXT_MUTED       = '#3a3a3a'; // slightly muted body copy
+export const TEXT_BODY        = '#222222'; // primary body text
+export const TEXT_PRIMARY     = '#111111'; // titles, strong emphasis
+export const TEXT_HEADING     = '#000000'; // screen / section headings
+
+// ─── Overlays & shadows ──────────────────────────────────────────────────────
+export const SHADOW  = '#000000';
+export const OVERLAY = 'rgba(0,0,0,0.4)';

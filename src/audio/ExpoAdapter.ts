@@ -6,9 +6,10 @@ export class ExpoAdapter implements AudioPort {
   private player: AudioPlayer | null = null;
   private finishCb: (() => void) | null = null;
   private playId = 0;
+  private audioModeReady = false;
 
-  async play(url: string, rate: number): Promise<void> {
-    // Increment before the await so any concurrent call gets a higher id.
+  async play(url: string, rate: number): Promise<boolean> {
+    // Increment before any await so concurrent calls get a higher id.
     const id = ++this.playId;
 
     // Stop current audio synchronously before yielding.
@@ -18,14 +19,19 @@ export class ExpoAdapter implements AudioPort {
       this.player = null;
     }
 
-    await setAudioModeAsync({
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-      interruptionMode: 'doNotMix',
-    });
+    // Set audio mode once — subsequent plays skip this await entirely,
+    // eliminating the yield gap that caused race conditions on rapid skips.
+    if (!this.audioModeReady) {
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: 'doNotMix',
+      });
+      this.audioModeReady = true;
+    }
 
     // A newer play() call started while we were awaiting — bail out.
-    if (id !== this.playId) return;
+    if (id !== this.playId) return false;
 
     const player = createAudioPlayer({ uri: url });
 
@@ -42,6 +48,7 @@ export class ExpoAdapter implements AudioPort {
     player.play();
 
     this.player = player;
+    return true;
   }
 
   pause(): void {

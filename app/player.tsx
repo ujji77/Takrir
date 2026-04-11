@@ -37,7 +37,23 @@ import {
 import { useChapters } from '../src/hooks/useChapters';
 import { useRecitations } from '../src/hooks/useRecitations';
 
-import { APP_PRIMARY, APP_PRIMARY_ACTIVE } from '../src/theme';
+import {
+  APP_PRIMARY,
+  APP_PRIMARY_ACTIVE,
+  SURFACE,
+  SURFACE_SCREEN,
+  SURFACE_FROSTED,
+  BORDER_STRONG,
+  HANDLE,
+  OVERLAY,
+  SHADOW,
+  TEXT_HEADING,
+  TEXT_PRIMARY,
+  TEXT_BODY,
+  TEXT_MUTED,
+  TEXT_SECONDARY,
+  TEXT_PLACEHOLDER,
+} from '../src/theme';
 const bismillahImg = require('../assets/bismillah.png');
 
 export default function PlayerScreen() {
@@ -145,6 +161,7 @@ export default function PlayerScreen() {
               style={[
                 styles.arabicText,
                 { fontSize: arabicFontSize, lineHeight: arabicFontSize * 2 },
+                quranFont === 'text_indopak' && { fontFamily: 'pdms-saleem-quranfont' },
               ]}
             >
               {arabicText}
@@ -321,16 +338,16 @@ export default function PlayerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fafafa' },
+  container: { flex: 1, backgroundColor: SURFACE_SCREEN },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
-  emptyText: { fontSize: 16, color: '#888' },
+  emptyText: { fontSize: 16, color: TEXT_SECONDARY },
 
   // Header
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: SURFACE,
     paddingHorizontal: 30,
     paddingBottom: 16,
-    shadowColor: '#000',
+    shadowColor: SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -345,7 +362,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: TEXT_HEADING,
     textAlign: 'center',
     flex: 1,
   },
@@ -368,29 +385,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   verseKeyPipe: {
-    color: '#bbb',
+    color: TEXT_PLACEHOLDER,
   },
   arabicText: {
-    color: '#333',
+    color: TEXT_MUTED,
     textAlign: 'center',
     fontWeight: '500',
     width: '100%',
   },
   translationText: {
     fontSize: 16,
-    color: '#3b3b3b',
+    color: TEXT_MUTED,
     lineHeight: 24,
     textAlign: 'center',
   },
 
   // Controls card
   card: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: SURFACE_FROSTED,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 30,
     gap: 30,
-    shadowColor: '#000',
+    shadowColor: SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 24,
@@ -407,7 +424,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(0, 203, 191, 0.6)',
+    backgroundColor: APP_PRIMARY,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -433,7 +450,7 @@ const styles = StyleSheet.create({
 
   // Reciter section — inside the card
   reciterSection: {
-    backgroundColor: '#fafafa',
+    backgroundColor: SURFACE_SCREEN,
     borderRadius: 20,
     padding: 16,
     gap: 16,
@@ -441,14 +458,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: TEXT_BODY,
   },
   reciterList: { gap: 12, paddingRight: 4 },
   reciterCard: {
     width: 100,
     height: 120,
     borderRadius: 10,
-    backgroundColor: '#efefef',
+    backgroundColor: SURFACE_SCREEN,
     overflow: 'hidden',
     justifyContent: 'flex-end',
     padding: 10,
@@ -467,14 +484,14 @@ const styles = StyleSheet.create({
   },
   reciterName: {
     fontSize: 12,
-    color: '#000',
+    color: TEXT_HEADING,
     lineHeight: 18,
   },
 
   // Playlist sheet
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  backdrop: { flex: 1, backgroundColor: OVERLAY },
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: SURFACE,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '60%',
@@ -483,7 +500,7 @@ const styles = StyleSheet.create({
   sheetHandle: {
     width: 36,
     height: 4,
-    backgroundColor: '#ddd',
+    backgroundColor: HANDLE,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 12,
@@ -491,7 +508,7 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111',
+    color: TEXT_PRIMARY,
     paddingHorizontal: 20,
     marginBottom: 12,
   },
@@ -506,12 +523,12 @@ const styles = StyleSheet.create({
     height: 31,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#cdcdcd',
-    backgroundColor: '#fff',
+    borderColor: BORDER_STRONG,
+    backgroundColor: SURFACE,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 10,
   },
   chipActive: { backgroundColor: APP_PRIMARY_ACTIVE },
-  chipText: { fontSize: 13, color: '#222' },
+  chipText: { fontSize: 13, color: TEXT_BODY },
 });

@@ -55,7 +55,8 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
       const url = resolveUrl(items[currentIndex]);
       if (!url) return;
       const rate = useSettingsStore.getState().playbackRate;
-      await audio.play(url, rate);
+      const played = await audio.play(url, rate);
+      if (!played) return;
       subscribeFinish();
     });
 
@@ -69,7 +70,8 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
       loadPlaylist: async (items) => {
         if (items.length === 0) return;
         const rate = useSettingsStore.getState().playbackRate;
-        await audio.play(resolveUrl(items[0]), rate);
+        const played = await audio.play(resolveUrl(items[0]), rate);
+        if (!played) return;
         subscribeFinish();
         set({ items, currentIndex: 0, currentRepeat: 0, isPlaying: true });
       },
@@ -83,7 +85,8 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
         const playsLeft = current.repeatCount - 1 - currentRepeat;
 
         if (playsLeft > 0) {
-          await audio.play(resolveUrl(current), rate);
+          const played = await audio.play(resolveUrl(current), rate);
+          if (!played) return;
           subscribeFinish();
           set({ currentRepeat: currentRepeat + 1 });
         } else {
@@ -92,7 +95,8 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
             if (get().repeatPlaylist && items.length > 0) {
               const firstUrl = resolveUrl(items[0]);
               if (!firstUrl) return;
-              await audio.play(firstUrl, rate);
+              const played = await audio.play(firstUrl, rate);
+              if (!played) return;
               subscribeFinish();
               set({ currentIndex: 0, currentRepeat: 0, isPlaying: true });
             } else {
@@ -103,7 +107,8 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
             }
             return;
           }
-          await audio.play(resolveUrl(items[nextIndex]), rate);
+          const played = await audio.play(resolveUrl(items[nextIndex]), rate);
+          if (!played) return;
           subscribeFinish();
           set({ currentIndex: nextIndex, currentRepeat: 0, isPlaying: true });
         }
@@ -126,7 +131,8 @@ export function createPlaylistStore(audio: AudioPort): UseBoundStore<StoreApi<Pl
         unsubFinish?.();
         unsubFinish = null;
         const rate = useSettingsStore.getState().playbackRate;
-        await audio.play(resolveUrl(items[index]), rate);
+        const played = await audio.play(resolveUrl(items[index]), rate);
+        if (!played) return;
         subscribeFinish();
         set({ currentIndex: index, currentRepeat: 0, isPlaying: true });
       },

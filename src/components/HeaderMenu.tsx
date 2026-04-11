@@ -11,12 +11,11 @@ import {
 import { useRouter } from 'expo-router';
 import { DotsThree, ArrowSquareOut } from 'phosphor-react-native';
 import { useAuthStore } from '../store/auth';
+import { APP_PRIMARY, SURFACE, SHADOW, TEXT_PRIMARY, TEXT_PLACEHOLDER, BORDER_STRONG } from '../theme';
 
 const PRIVACY_POLICY_URL = 'https://takrir-web.spatialuzair.workers.dev/privacy';
 const TERMS_URL = 'https://takrir-web.spatialuzair.workers.dev/terms';
 const CONTACT_URL = 'https://takrir-web.spatialuzair.workers.dev/';
-
-import { APP_PRIMARY } from '../theme';
 
 export default function HeaderMenu() {
   const [visible, setVisible] = useState(false);
@@ -61,7 +60,7 @@ export default function HeaderMenu() {
               activeOpacity={0.7}
             >
               <Text style={styles.menuItemText}>Privacy Policy</Text>
-              <ArrowSquareOut size={15} color="#aaa" />
+              <ArrowSquareOut size={15} color={TEXT_PLACEHOLDER} />
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -72,7 +71,7 @@ export default function HeaderMenu() {
               activeOpacity={0.7}
             >
               <Text style={styles.menuItemText}>Terms of Service</Text>
-              <ArrowSquareOut size={15} color="#aaa" />
+              <ArrowSquareOut size={15} color={TEXT_PLACEHOLDER} />
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -83,7 +82,7 @@ export default function HeaderMenu() {
               activeOpacity={0.7}
             >
               <Text style={styles.menuItemText}>Contact</Text>
-              <ArrowSquareOut size={15} color="#aaa" />
+              <ArrowSquareOut size={15} color={TEXT_PLACEHOLDER} />
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -107,10 +106,10 @@ const styles = StyleSheet.create({
     right: 16,
     width: 185,
     borderRadius: 10,
-    backgroundColor: '#fff',
+    backgroundColor: SURFACE,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    shadowColor: '#000',
+    shadowColor: SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 24,
@@ -124,10 +123,10 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 15,
-    color: '#111',
+    color: TEXT_PRIMARY,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: BORDER_STRONG,
   },
 });

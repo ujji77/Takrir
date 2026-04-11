@@ -16,8 +16,17 @@ import { usePlaylistStore } from '../src/store/playlist';
 import { useChapters } from '../src/hooks/useChapters';
 import { buildPlaylistItems } from '../src/utils/buildPlaylistItems';
 import PlaylistHeader from '../src/components/PlaylistHeader';
+import {
+  APP_PRIMARY,
+  APP_PRIMARY_ACTIVE,
+  SURFACE,
+  SURFACE_SCREEN,
+  BORDER_STRONG,
+  TEXT_SECONDARY,
+  TEXT_MUTED,
+  SHADOW,
+} from '../src/theme';
 
-import { APP_PRIMARY } from '../src/theme';
 const BISMILLAH_EN = 'In the Name of Allah\nthe Most Compassionate, Most Merciful';
 const bismillahImg = require('../assets/bismillah.png');
 
@@ -109,10 +118,8 @@ export default function PlaylistScreen() {
             const translation = item.translations?.[0]?.text?.replace(/<[^>]+>/g, '') ?? '';
             return (
               <View style={styles.verseRow}>
-                {/* Col 1: verse number */}
                 <Text style={styles.verseNumber}>{item.verse_key}</Text>
 
-                {/* Col 2: Arabic + translation */}
                 <View style={styles.verseContent}>
                   <Text style={styles.arabicText}>{item.text_uthmani}</Text>
                   {translation ? (
@@ -120,7 +127,6 @@ export default function PlaylistScreen() {
                   ) : null}
                 </View>
 
-                {/* Col 3: repeat counter */}
                 <View style={styles.repeater}>
                   <TouchableOpacity
                     onPress={() => setRepeat(item.verse_key, 1)}
@@ -144,7 +150,6 @@ export default function PlaylistScreen() {
         />
       )}
 
-      {/* Floating play button */}
       <View style={styles.playWrap} pointerEvents="box-none">
         <TouchableOpacity
           style={[styles.playButton, !canPlay && styles.playButtonDisabled]}
@@ -162,7 +167,7 @@ export default function PlaylistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: SURFACE_SCREEN,
   },
   center: {
     flex: 1,
@@ -172,7 +177,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: '#888',
+    color: TEXT_SECONDARY,
   },
 
   // Bismillah
@@ -188,7 +193,7 @@ const styles = StyleSheet.create({
   },
   bismillahEn: {
     fontSize: 12,
-    color: '#333',
+    color: TEXT_MUTED,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -201,7 +206,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: BORDER_STRONG,
     marginVertical: 20,
   },
 
@@ -225,13 +230,13 @@ const styles = StyleSheet.create({
   },
   arabicText: {
     fontSize: 18,
-    color: '#333',
+    color: TEXT_MUTED,
     textAlign: 'right',
     lineHeight: 36,
   },
   translationText: {
     fontSize: 14,
-    color: '#333',
+    color: TEXT_MUTED,
     lineHeight: 22,
   },
 
@@ -251,7 +256,7 @@ const styles = StyleSheet.create({
   },
   repeatCount: {
     fontSize: 14,
-    color: '#3a3a3a',
+    color: TEXT_MUTED,
     textAlign: 'center',
   },
 
@@ -270,18 +275,18 @@ const styles = StyleSheet.create({
     backgroundColor: APP_PRIMARY,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 6,
   },
   playButtonDisabled: {
-    backgroundColor: '#a0e8e4',
+    backgroundColor: APP_PRIMARY_ACTIVE,
   },
   playIcon: {
     fontSize: 22,
-    color: '#fff',
+    color: SURFACE,
     marginLeft: 3,
   },
 });

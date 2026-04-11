@@ -15,8 +15,20 @@ import { Stack, useRouter } from 'expo-router';
 import { useChapters } from '../src/hooks/useChapters';
 import AppHeader from '../src/components/AppHeader';
 import type { Chapter } from '../src/types/api';
-
-import { APP_PRIMARY, APP_PRIMARY_LIGHT } from '../src/theme';
+import {
+  APP_PRIMARY,
+  SURFACE,
+  SURFACE_SCREEN,
+  SURFACE_INPUT,
+  BORDER,
+  TEXT_HEADING,
+  TEXT_PRIMARY,
+  TEXT_BODY,
+  TEXT_SECONDARY,
+  TEXT_TERTIARY,
+  TEXT_MUTED,
+  TEXT_PLACEHOLDER,
+} from '../src/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -69,7 +81,6 @@ export default function HomeScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AppHeader title="Welcome to Takrir" />
       <View style={styles.card}>
-        {/* Sentence-style selector row */}
         <View style={styles.sentenceRow}>
           <View style={styles.labelWrap}>
             <Text style={styles.label}>I am learning surah</Text>
@@ -96,7 +107,7 @@ export default function HomeScreen() {
               onChangeText={setFromVerse}
               keyboardType="number-pad"
               placeholder="1"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={TEXT_PLACEHOLDER}
               editable={!!selectedChapter}
               textAlign="center"
             />
@@ -113,14 +124,13 @@ export default function HomeScreen() {
               onChangeText={setToVerse}
               keyboardType="number-pad"
               placeholder="…"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={TEXT_PLACEHOLDER}
               editable={!!selectedChapter}
               textAlign="center"
             />
           </View>
         </View>
 
-        {/* Continue button — only visible once a surah is selected */}
         {selectedChapter && (
           <View style={styles.continueRow}>
             <TouchableOpacity
@@ -129,13 +139,12 @@ export default function HomeScreen() {
               disabled={!canProceed}
               activeOpacity={0.8}
             >
-              <CaretRight size={22} color="#fff" weight="bold" />
+              <CaretRight size={22} color={SURFACE} weight="bold" />
             </TouchableOpacity>
           </View>
         )}
       </View>
 
-      {/* Surah Picker Modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -153,7 +162,7 @@ export default function HomeScreen() {
             <TextInput
               style={styles.searchInput}
               placeholder="Search by name or number…"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={TEXT_PLACEHOLDER}
               value={search}
               onChangeText={setSearch}
               autoFocus
@@ -195,7 +204,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: SURFACE_SCREEN,
   },
   card: {
     flex: 1,
@@ -219,10 +228,10 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 20,
     fontWeight: '500',
-    color: '#000',
+    color: TEXT_HEADING,
   },
   surahBox: {
-    backgroundColor: '#fff',
+    backgroundColor: SURFACE,
     borderWidth: 1,
     borderColor: APP_PRIMARY,
     borderRadius: 8,
@@ -234,11 +243,11 @@ const styles = StyleSheet.create({
   },
   boxText: {
     fontSize: 20,
-    color: '#222',
+    color: TEXT_BODY,
     textAlign: 'center',
   },
   verseBox: {
-    backgroundColor: '#fff',
+    backgroundColor: SURFACE,
     borderWidth: 1,
     borderColor: APP_PRIMARY,
     borderRadius: 8,
@@ -248,7 +257,7 @@ const styles = StyleSheet.create({
   },
   verseInput: {
     fontSize: 20,
-    color: '#222',
+    color: TEXT_BODY,
     paddingVertical: 10,
     paddingHorizontal: 10,
     width: '100%',
@@ -265,7 +274,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 60,
-    backgroundColor: APP_PRIMARY_LIGHT,
+    backgroundColor: APP_PRIMARY,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -276,7 +285,7 @@ const styles = StyleSheet.create({
   // Modal
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: SURFACE,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -285,31 +294,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: BORDER,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111',
+    color: TEXT_PRIMARY,
   },
   modalClose: {
     fontSize: 18,
-    color: '#888',
+    color: TEXT_SECONDARY,
     paddingHorizontal: 4,
   },
   searchWrap: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: BORDER,
   },
   searchInput: {
-    backgroundColor: '#f4f4f4',
+    backgroundColor: SURFACE_INPUT,
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 16,
-    color: '#222',
+    color: TEXT_BODY,
   },
   chapterRow: {
     flexDirection: 'row',
@@ -317,12 +326,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: BORDER,
   },
   chapterNum: {
     width: 36,
     fontSize: 13,
-    color: '#999',
+    color: TEXT_TERTIARY,
   },
   chapterInfo: {
     flex: 1,
@@ -330,16 +339,16 @@ const styles = StyleSheet.create({
   chapterName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#111',
+    color: TEXT_PRIMARY,
   },
   chapterSub: {
     fontSize: 12,
-    color: '#888',
+    color: TEXT_SECONDARY,
     marginTop: 2,
   },
   chapterArabic: {
     fontSize: 20,
-    color: '#333',
+    color: TEXT_MUTED,
     marginLeft: 8,
   },
 });
