@@ -38,8 +38,8 @@ export default function PlaylistScreen() {
   const toVerse = parseInt(params.to, 10);
 
   const { data: chapters } = useChapters();
-  const { data: verses, isLoading: versesLoading } = useVersesByChapter(chapterNumber);
-  const { data: audioByReciter, isLoading: audioLoading } = useMultipleAudioFiles(
+  const { data: verses, isLoading: versesLoading, isError: versesError } = useVersesByChapter(chapterNumber);
+  const { data: audioByReciter, isLoading: audioLoading, isError: audioError } = useMultipleAudioFiles(
     chapterNumber,
     SUPPORTED_RECITATION_IDS,
   );
@@ -95,6 +95,13 @@ export default function PlaylistScreen() {
         <View style={styles.center}>
           <ActivityIndicator color={APP_PRIMARY} size="large" />
           <Text style={styles.loadingText}>Loading verses & audio…</Text>
+        </View>
+      ) : versesError || audioError ? (
+        <View style={styles.center}>
+          <Text style={styles.loadingText}>Failed to load. Check your connection and try again.</Text>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
+            <Text style={{ color: APP_PRIMARY }}>Go back</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList

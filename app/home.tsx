@@ -32,7 +32,7 @@ import {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { data: chapters, isLoading } = useChapters();
+  const { data: chapters, isLoading, isError: chaptersError } = useChapters();
 
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   const [fromVerse, setFromVerse] = useState('');
@@ -172,6 +172,11 @@ export default function HomeScreen() {
 
           {isLoading ? (
             <ActivityIndicator style={{ marginTop: 32 }} color={APP_PRIMARY} />
+          ) : chaptersError ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Text style={{ color: TEXT_SECONDARY, fontSize: 14 }}>Failed to load surahs.</Text>
+              <Text style={{ color: TEXT_SECONDARY, fontSize: 14 }}>Check your connection and try again.</Text>
+            </View>
           ) : (
             <FlatList
               data={filteredChapters}

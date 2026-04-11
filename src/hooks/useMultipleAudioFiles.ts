@@ -5,7 +5,7 @@ import type { AudioFile } from '../types/api';
 export function useMultipleAudioFiles(
   chapterNumber: number | null,
   recitationIds: readonly number[],
-): { data: Record<number, AudioFile[]>; isLoading: boolean } {
+): { data: Record<number, AudioFile[]>; isLoading: boolean; isError: boolean } {
   const results = useQueries({
     queries: recitationIds.map((id) => ({
       queryKey: ['audio', id, chapterNumber],
@@ -21,5 +21,6 @@ export function useMultipleAudioFiles(
   });
 
   const isLoading = results.some((r) => r.isLoading);
-  return { data, isLoading };
+  const isError = results.some((r) => r.isError);
+  return { data, isLoading, isError };
 }

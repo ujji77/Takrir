@@ -158,19 +158,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   flushToCloud: async () => {
     if (!get().cloudDirty) return;
-    set({ cloudDirty: false });
     const s = get();
-    const cloudSettings: CloudSettings = {
-      recitationId: s.recitationId,
-      quranFont: s.quranFont,
-      fontScale: s.fontScale,
-      enableAutoScrolling: s.enableAutoScrolling,
-    };
     await syncSettingsToCloud([
-      { category: PREF_CATEGORY, name: 'reciter', value: String(cloudSettings.recitationId) },
-      { category: PREF_CATEGORY, name: 'quran_font', value: cloudSettings.quranFont },
-      { category: PREF_CATEGORY, name: 'font_scale', value: cloudSettings.fontScale },
-      { category: PREF_CATEGORY, name: 'enable_auto_scrolling', value: String(cloudSettings.enableAutoScrolling) },
+      { category: PREF_CATEGORY, name: 'reciter', value: String(s.recitationId) },
+      { category: PREF_CATEGORY, name: 'quran_font', value: s.quranFont },
+      { category: PREF_CATEGORY, name: 'font_scale', value: s.fontScale },
+      { category: PREF_CATEGORY, name: 'enable_auto_scrolling', value: String(s.enableAutoScrolling) },
     ]);
+    set({ cloudDirty: false });
   },
 }));
