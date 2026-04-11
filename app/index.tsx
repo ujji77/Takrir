@@ -42,7 +42,7 @@ export default function AuthScreen() {
   const [request, response, promptAsync] = useAuthRequest(
     {
       clientId: CLIENT_ID,
-      scopes: ['openid', 'offline_access'],
+      scopes: ['offline_access'],
       redirectUri,
       usePKCE: true,
     },
