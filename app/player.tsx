@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  Image,
   Modal,
   StyleSheet,
 } from 'react-native';
@@ -30,16 +29,15 @@ import {
   FONT_SCALES,
   QURAN_FONTS,
   PLAYBACK_RATES,
-  SUPPORTED_RECITATION_IDS,
   type FontScale,
   type QuranFont,
 } from '../src/store/settings';
 import { useChapters } from '../src/hooks/useChapters';
-import { useRecitations } from '../src/hooks/useRecitations';
 
 import {
   APP_PRIMARY,
   APP_PRIMARY_ACTIVE,
+  APP_PRIMARY_LIGHT,
   SURFACE,
   SURFACE_SCREEN,
   SURFACE_FROSTED,
@@ -53,12 +51,18 @@ import {
   TEXT_SECONDARY,
   TEXT_PLACEHOLDER,
 } from '../src/theme';
-const bismillahImg = require('../assets/bismillah.png');
 
 export default function PlayerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  type DrawerType = 'arabic' | 'fontSize' | 'font' | 'speed' | 'repeat';
+
   const [playlistVisible, setPlaylistVisible] = useState(false);
+  const [activeDrawer, setActiveDrawer] = useState<DrawerType | null>(null);
+
+  const selectDrawer = (id: DrawerType) => {
+    setActiveDrawer((prev) => (prev === id ? null : id));
+  };
 
   const items = usePlaylistStore((s) => s.items);
   const currentIndex = usePlaylistStore((s) => s.currentIndex);
@@ -83,7 +87,6 @@ export default function PlayerScreen() {
   const setRecitation = useSettingsStore((s) => s.setRecitation);
 
   const { data: chapters } = useChapters();
-  const { data: recitations } = useRecitations();
 
   const currentItem = items[currentIndex];
   const chapterNumber = currentItem ? parseInt(currentItem.verseKey.split(':')[0], 10) : null;
@@ -91,14 +94,6 @@ export default function PlayerScreen() {
   const chapter = useMemo(
     () => chapters?.find((c) => c.id === chapterNumber),
     [chapters, chapterNumber],
-  );
-
-  const supportedRecitations = useMemo(
-    () =>
-      recitations?.filter((r) =>
-        (SUPPORTED_RECITATION_IDS as readonly number[]).includes(r.id),
-      ) ?? [],
-    [recitations],
   );
 
   const arabicFontSize = FONT_SCALE_SIZES[fontScale];
@@ -171,130 +166,128 @@ export default function PlayerScreen() {
 
       {/* Controls card — anchored to bottom */}
       <View style={[styles.card, { paddingBottom: insets.bottom + 30 }]}>
-          {/* Playback controls */}
-          <View style={styles.controlsRow}>
-            <TouchableOpacity
-              onPress={() => skipTo(currentIndex - 1)}
-              disabled={currentIndex === 0}
-              hitSlop={12}
-            >
-              <SkipBack
-                size={26}
-                color={APP_PRIMARY}
-                weight="fill"
-                style={currentIndex === 0 ? styles.dimmed : undefined}
-              />
-            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.playBtn} onPress={togglePlay} activeOpacity={0.8}>
-              {isPlaying
-                ? <Pause size={36} color="#fff" weight="fill" />
-                : <Play size={36} color="#fff" weight="fill" style={{ marginLeft: 4 }} />
-              }
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => skipTo(currentIndex + 1)}
-              disabled={currentIndex === items.length - 1}
-              hitSlop={12}
-            >
-              <SkipForward
-                size={26}
-                color={APP_PRIMARY}
-                weight="fill"
-                style={currentIndex === items.length - 1 ? styles.dimmed : undefined}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Icon bar */}
-          <View style={styles.iconBar}>
-            <View style={styles.iconBarLeft}>
-              <TouchableOpacity onPress={() => setShowArabic(!showArabic)} hitSlop={10}>
-                {showArabic
-                  ? <Eye size={24} color={APP_PRIMARY} />
-                  : <EyeSlash size={24} color={APP_PRIMARY} opacity={0.35} />
-                }
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  const idx = FONT_SCALES.indexOf(fontScale);
-                  setFontScale(FONT_SCALES[(idx + 1) % FONT_SCALES.length] as FontScale);
-                }}
-                hitSlop={10}
-              >
-                <ArrowFatLinesUp size={24} color={APP_PRIMARY} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  const idx = QURAN_FONTS.indexOf(quranFont);
-                  setQuranFont(QURAN_FONTS[(idx + 1) % QURAN_FONTS.length] as QuranFont);
-                }}
-                hitSlop={10}
-              >
-                <Translate size={24} color={APP_PRIMARY} />
-              </TouchableOpacity>
-
-              {/* Speed toggle */}
-              <TouchableOpacity
-                onPress={() => {
-                  const idx = PLAYBACK_RATES.indexOf(playbackRate as typeof PLAYBACK_RATES[number]);
-                  const next = PLAYBACK_RATES[(idx + 1) % PLAYBACK_RATES.length];
-                  setPlaybackRate(next);
-                  applyPlaybackRate(next);
-                }}
-                hitSlop={10}
-                style={styles.speedBadge}
-              >
-                <Text style={styles.speedText}>{playbackRate}×</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={toggleRepeatPlaylist} hitSlop={10}>
-                <Repeat size={24} color={APP_PRIMARY} opacity={repeatPlaylist ? 1 : 0.35} />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity onPress={() => setPlaylistVisible(true)} hitSlop={10}>
-              <Queue size={24} color={APP_PRIMARY} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Reciter section — commented out
-          <View style={styles.reciterSection}>
-            <Text style={styles.sectionTitle}>Reciter</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.reciterList}
-              nestedScrollEnabled
-            >
-              {supportedRecitations.map((reciter) => {
-                const active = reciter.id === recitationId;
-                return (
-                  <TouchableOpacity
-                    key={reciter.id}
-                    style={[styles.reciterCard, active && styles.reciterCardActive]}
-                    onPress={() => setRecitation(reciter.id)}
-                    activeOpacity={0.8}
-                  >
-                    <Image
-                      source={bismillahImg}
-                      style={styles.reciterImage}
-                      resizeMode="cover"
-                    />
-                    <Text style={styles.reciterName} numberOfLines={2}>
-                      {reciter.reciter_name}
-                      {reciter.style ? `\n${reciter.style}` : ''}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-          */}
+        {/* Playback controls */}
+        <View style={styles.controlsRow}>
+          <TouchableOpacity onPress={() => skipTo(currentIndex - 1)} disabled={currentIndex === 0} hitSlop={12}>
+            <SkipBack size={26} color={APP_PRIMARY} weight="fill" style={currentIndex === 0 ? styles.dimmed : undefined} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.playBtn} onPress={togglePlay} activeOpacity={0.8}>
+            {isPlaying
+              ? <Pause size={36} color="#fff" weight="fill" />
+              : <Play size={36} color="#fff" weight="fill" style={{ marginLeft: 4 }} />
+            }
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => skipTo(currentIndex + 1)} disabled={currentIndex === items.length - 1} hitSlop={12}>
+            <SkipForward size={26} color={APP_PRIMARY} weight="fill" style={currentIndex === items.length - 1 ? styles.dimmed : undefined} />
+          </TouchableOpacity>
         </View>
+
+        {/* Icon bar */}
+        <View style={styles.iconBar}>
+          <View style={styles.iconBarLeft}>
+            <TouchableOpacity onPress={() => selectDrawer('arabic')} hitSlop={10} style={{ opacity: activeDrawer === 'arabic' ? 1 : showArabic ? 0.6 : 0.35 }}>
+              {showArabic ? <Eye size={24} color={APP_PRIMARY} /> : <EyeSlash size={24} color={APP_PRIMARY} />}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => selectDrawer('fontSize')} hitSlop={10} style={{ opacity: activeDrawer === 'fontSize' ? 1 : 0.6 }}>
+              <ArrowFatLinesUp size={24} color={APP_PRIMARY} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => selectDrawer('font')} hitSlop={10} style={{ opacity: activeDrawer === 'font' ? 1 : 0.6 }}>
+              <Translate size={24} color={APP_PRIMARY} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => selectDrawer('speed')} hitSlop={10} style={styles.speedBadge}>
+              <Text style={[styles.speedText, activeDrawer === 'speed' && styles.speedTextActive]}>{playbackRate}×</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => selectDrawer('repeat')} hitSlop={10} style={{ opacity: repeatPlaylist ? (activeDrawer === 'repeat' ? 1 : 0.6) : (activeDrawer === 'repeat' ? 0.6 : 0.35) }}>
+              <Repeat size={24} color={APP_PRIMARY} />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={() => setPlaylistVisible(true)} hitSlop={10}>
+            <Queue size={24} color={APP_PRIMARY} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Settings bottom sheet */}
+      <Modal
+        visible={activeDrawer !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setActiveDrawer(null)}
+      >
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => setActiveDrawer(null)}
+        />
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 24 }]}>
+          <View style={styles.sheetHandle} />
+
+          {activeDrawer === 'arabic' && (
+            <>
+              <Text style={styles.sheetTitle}>Display text</Text>
+              <View style={styles.drawerChipRow}>
+                <TouchableOpacity style={[styles.drawerChip, showArabic && styles.drawerChipActive]} onPress={() => setShowArabic(true)}>
+                  <Eye size={14} color={TEXT_BODY} /><Text style={styles.drawerChipText}>Show</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.drawerChip, !showArabic && styles.drawerChipActive]} onPress={() => setShowArabic(false)}>
+                  <EyeSlash size={14} color={TEXT_BODY} /><Text style={styles.drawerChipText}>Hide</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+          {activeDrawer === 'fontSize' && (
+            <>
+              <Text style={styles.sheetTitle}>Text size</Text>
+              <View style={styles.drawerChipRow}>
+                {(['S', 'M', 'L', 'XL'] as FontScale[]).map((scale, i) => (
+                  <TouchableOpacity key={scale} style={[styles.drawerChip, fontScale === scale && styles.drawerChipActive]} onPress={() => setFontScale(scale)}>
+                    <Text style={styles.drawerChipText}>{['Small', 'Medium', 'Large', 'Extra large'][i]}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+          {activeDrawer === 'font' && (
+            <>
+              <Text style={styles.sheetTitle}>Script type</Text>
+              <View style={styles.drawerChipRow}>
+                <TouchableOpacity style={[styles.drawerChip, quranFont === 'text_uthmani' && styles.drawerChipActive]} onPress={() => setQuranFont('text_uthmani')}>
+                  <Text style={styles.drawerChipText}>Uthmani</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.drawerChip, quranFont === 'text_indopak' && styles.drawerChipActive]} onPress={() => setQuranFont('text_indopak')}>
+                  <Text style={styles.drawerChipText}>Indo-Pak</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+          {activeDrawer === 'speed' && (
+            <>
+              <Text style={styles.sheetTitle}>Speed</Text>
+              <View style={styles.drawerChipRow}>
+                {PLAYBACK_RATES.map((rate) => (
+                  <TouchableOpacity key={rate} style={[styles.drawerChip, playbackRate === rate && styles.drawerChipActive]} onPress={() => { setPlaybackRate(rate); applyPlaybackRate(rate); }}>
+                    <Text style={styles.drawerChipText}>{rate}×</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+          {activeDrawer === 'repeat' && (
+            <>
+              <Text style={styles.sheetTitle}>Repeat playlist</Text>
+              <View style={styles.drawerChipRow}>
+                <TouchableOpacity style={[styles.drawerChip, repeatPlaylist && styles.drawerChipActive]} onPress={() => { if (!repeatPlaylist) toggleRepeatPlaylist(); }}>
+                  <Text style={styles.drawerChipText}>On</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.drawerChip, !repeatPlaylist && styles.drawerChipActive]} onPress={() => { if (repeatPlaylist) toggleRepeatPlaylist(); }}>
+                  <Text style={styles.drawerChipText}>Off</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </View>
+      </Modal>
 
       {/* Playlist bottom sheet */}
       <Modal
@@ -406,8 +399,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 30,
-    gap: 30,
-    shadowColor: SHADOW,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 24,
@@ -428,11 +420,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   // Icon bar
   iconBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 44,
   },
   iconBarLeft: {
     flexDirection: 'row',
@@ -446,46 +440,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: APP_PRIMARY,
     fontWeight: '600',
+    opacity: 0.6,
+  },
+  speedTextActive: {
+    opacity: 1,
   },
 
-  // Reciter section — inside the card
-  reciterSection: {
-    backgroundColor: SURFACE_SCREEN,
-    borderRadius: 20,
-    padding: 16,
-    gap: 16,
+  // Settings drawer chips
+  drawerChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 8,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: TEXT_BODY,
-  },
-  reciterList: { gap: 12, paddingRight: 4 },
-  reciterCard: {
-    width: 100,
-    height: 120,
+  drawerChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: SURFACE,
     borderRadius: 10,
-    backgroundColor: SURFACE_SCREEN,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
-  reciterCardActive: {
-    borderWidth: 2,
-    borderColor: APP_PRIMARY,
+  drawerChipActive: {
+    backgroundColor: APP_PRIMARY_LIGHT,
   },
-  reciterImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.12,
-  },
-  reciterName: {
-    fontSize: 12,
-    color: TEXT_HEADING,
-    lineHeight: 18,
+  drawerChipText: {
+    fontSize: 15,
+    color: TEXT_BODY,
   },
 
   // Playlist sheet
