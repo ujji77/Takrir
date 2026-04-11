@@ -46,7 +46,6 @@ import {
   BORDER_STRONG,
   HANDLE,
   OVERLAY,
-  SHADOW,
   TEXT_HEADING,
   TEXT_PRIMARY,
   TEXT_BODY,
@@ -139,9 +138,9 @@ export default function PlayerScreen() {
           <TouchableOpacity onPress={handleBack} hitSlop={12} style={styles.headerIconWrap}>
             <CaretLeft size={22} color={APP_PRIMARY} weight="bold" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{chapterName}</Text>
           <View style={styles.headerIconWrap} />
         </View>
+        <Text style={styles.headerTitle}>{chapterName}</Text>
       </View>
 
       {/* Verse text area — fills space between header and anchored card */}
@@ -347,11 +346,12 @@ const styles = StyleSheet.create({
     backgroundColor: SURFACE,
     paddingHorizontal: 30,
     paddingBottom: 16,
-    shadowColor: SHADOW,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    gap: 10,
+    shadowColor: APP_PRIMARY,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
   },
   headerRow: {
     flexDirection: 'row',
@@ -360,11 +360,11 @@ const styles = StyleSheet.create({
   },
   headerIconWrap: { width: 28, alignItems: 'center' },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 30,
     fontWeight: '600',
     color: TEXT_HEADING,
     textAlign: 'center',
-    flex: 1,
+    lineHeight: 38,
   },
 
   scroll: { flex: 1 },
