@@ -22,6 +22,7 @@ import {
   SURFACE,
   SURFACE_SCREEN,
   BORDER_STRONG,
+  TEXT_PRIMARY,
   TEXT_SECONDARY,
   TEXT_MUTED,
   SHADOW,
@@ -138,18 +139,22 @@ export default function PlaylistScreen() {
                 <View style={styles.repeater}>
                   <TouchableOpacity
                     onPress={() => setRepeat(item.verse_key, 1)}
-                    hitSlop={10}
-                    style={styles.arrowBtn}
+                    style={styles.repeaterUp}
+                    hitSlop={4}
                   >
-                    <Text style={styles.arrowText}>↑</Text>
+                    <Text style={styles.repeaterIcon}>+</Text>
                   </TouchableOpacity>
-                  <Text style={styles.repeatCount}>x {count}</Text>
+
+                  <View style={styles.repeaterMiddle}>
+                    <Text style={styles.repeaterCount}>x {count}</Text>
+                  </View>
+
                   <TouchableOpacity
                     onPress={() => setRepeat(item.verse_key, -1)}
-                    hitSlop={10}
-                    style={styles.arrowBtn}
+                    style={styles.repeaterDown}
+                    hitSlop={4}
                   >
-                    <Text style={styles.arrowText}>↓</Text>
+                    <Text style={styles.repeaterIcon}>−</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -250,19 +255,44 @@ const styles = StyleSheet.create({
 
   // Repeater
   repeater: {
-    width: 45,
+    width: 35,
     alignItems: 'center',
-    gap: 5,
   },
-  arrowBtn: {
+  repeaterUp: {
+    width: 35,
+    height: 35,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D2D2D2',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
-  arrowText: {
-    fontSize: 20,
-    color: APP_PRIMARY,
+  repeaterMiddle: {
+    width: 35,
+    height: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#D2D2D2',
   },
-  repeatCount: {
+  repeaterDown: {
+    width: 35,
+    height: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D2D2D2',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  repeaterIcon: {
+    fontSize: 16,
+    color: TEXT_PRIMARY,
+    lineHeight: 20,
+  },
+  repeaterCount: {
     fontSize: 14,
     color: TEXT_MUTED,
     textAlign: 'center',
