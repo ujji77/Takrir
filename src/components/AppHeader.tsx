@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HeaderMenu from './HeaderMenu';
-import { APP_PRIMARY, SURFACE, SHADOW, TEXT_HEADING } from '../theme';
+import { APP_PRIMARY, SURFACE, TEXT_HEADING } from '../theme';
 
 type Props = {
   title: string;
@@ -34,11 +34,11 @@ const styles = StyleSheet.create({
     backgroundColor: SURFACE,
     paddingBottom: 16,
     paddingHorizontal: 30,
-    shadowColor: SHADOW,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowColor: APP_PRIMARY,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
   },
   row: {
     flexDirection: 'row',
