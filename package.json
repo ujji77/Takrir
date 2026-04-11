@@ -35,5 +35,9 @@
     "jest-expo": "^54.0.17",
     "typescript": "~5.9.2"
   },
+  "overrides": {
+    "react-dom": "19.1.0",
+    "react-test-renderer": "19.1.0"
+  },
   "private": true
 }
