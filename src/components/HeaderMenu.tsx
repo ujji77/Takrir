@@ -15,7 +15,7 @@ import { APP_PRIMARY, SURFACE, SHADOW, TEXT_PRIMARY, TEXT_PLACEHOLDER, BORDER_ST
 
 const PRIVACY_POLICY_URL = 'https://takrir-web.spatialuzair.workers.dev/privacy';
 const TERMS_URL = 'https://takrir-web.spatialuzair.workers.dev/terms';
-const CONTACT_URL = 'https://takrir-web.spatialuzair.workers.dev/';
+const CONTACT_URL = 'https://takrir-web.spatialuzair.workers.dev/contact';
 
 export default function HeaderMenu() {
   const [visible, setVisible] = useState(false);

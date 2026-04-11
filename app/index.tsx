@@ -28,7 +28,7 @@ const discovery = {
   revocationEndpoint: `${AUTH_URL}/oauth2/revoke`,
 };
 
-const redirectUri = makeRedirectUri({ scheme: 'takrir', path: 'auth' });
+const redirectUri = 'https://takrir-web.spatialuzair.workers.dev/auth/callback';
 
 const iconImg = require('../assets/icon.png');
 
