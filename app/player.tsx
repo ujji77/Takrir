@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   ScrollView,
   Modal,
   StyleSheet,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -89,6 +91,62 @@ export default function PlayerScreen() {
 
   const { data: chapters } = useChapters();
 
+  // Waveform animation — 3-tier bar heights based on position
+  const BAR_COUNT = 28;
+  const barAnims = useRef(
+    Array.from({ length: BAR_COUNT }, () => new Animated.Value(0)),
+  ).current;
+  const barDurations = useRef(
+    Array.from({ length: BAR_COUNT }, () => 200 + Math.random() * 500),
+  ).current;
+
+  const getBarTier = (i: number): 'sm' | 'md' | 'lg' => {
+    if (i < 3 || i >= 25) return 'sm';
+    if (i < 7 || i >= 21) return 'md';
+    return 'lg';
+  };
+  const TIER_CONFIG = {
+    sm: { minH: 10, maxH: 25, minOp: 0.35, maxOp: 1 },
+    md: { minH: 15, maxH: 50, minOp: 0.35, maxOp: 1 },
+    lg: { minH: 15, maxH: 70, minOp: 0.35, maxOp: 1 },
+  };
+
+  useEffect(() => {
+    if (isPlaying) {
+      const loops = barAnims.map((anim, i) => {
+        const dur = barDurations[i];
+        return Animated.loop(
+          Animated.sequence([
+            Animated.timing(anim, {
+              toValue: 1,
+              duration: dur,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: false,
+            }),
+            Animated.timing(anim, {
+              toValue: 0,
+              duration: dur,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: false,
+            }),
+          ]),
+        );
+      });
+      const timers: ReturnType<typeof setTimeout>[] = [];
+      loops.forEach((loop, i) => {
+        timers.push(setTimeout(() => loop.start(), (i % 7) * 50));
+      });
+      return () => {
+        timers.forEach(clearTimeout);
+        loops.forEach((l) => l.stop());
+      };
+    } else {
+      barAnims.forEach((anim) =>
+        Animated.timing(anim, { toValue: 0, duration: 400, useNativeDriver: false }).start(),
+      );
+    }
+  }, [isPlaying, currentIndex]);
+
   const currentItem = items[currentIndex];
   const chapterNumber = currentItem ? parseInt(currentItem.verseKey.split(':')[0], 10) : null;
 
@@ -164,6 +222,26 @@ export default function PlayerScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Waveform — above the controls card */}
+      <View style={styles.waveform}>
+        {barAnims.map((anim, i) => {
+          const tier = getBarTier(i);
+          const { minH, maxH, minOp, maxOp } = TIER_CONFIG[tier];
+          return (
+            <Animated.View
+              key={i}
+              style={[
+                styles.waveformBar,
+                {
+                  height: anim.interpolate({ inputRange: [0, 1], outputRange: [minH, maxH] }),
+                  opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [minOp, maxOp] }),
+                },
+              ]}
+            />
+          );
+        })}
+      </View>
 
       {/* Controls card — anchored to bottom */}
       <View style={[styles.card, { paddingBottom: insets.bottom + 30 }]}>
@@ -410,6 +488,21 @@ const styles = StyleSheet.create({
     color: TEXT_MUTED,
     lineHeight: 24,
     textAlign: 'center',
+  },
+
+  // Waveform
+  waveform: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-evenly',
+    height: 70,
+    paddingHorizontal: 12,
+  },
+  waveformBar: {
+    flex: 1,
+    maxWidth: 4,
+    borderRadius: 2,
+    backgroundColor: APP_PRIMARY,
   },
 
   // Controls card
