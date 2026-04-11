@@ -35,10 +35,7 @@
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "newArchEnabled": true,
+"newArchEnabled": true,
     "plugins": [
       "expo-router",
       "expo-web-browser",
