@@ -67,7 +67,7 @@ export default function AuthScreen() {
           clientId: CLIENT_ID,
           code: response.params.code,
           redirectUri,
-          extraParams: { code_verifier: request.codeVerifier },
+          codeVerifier: request.codeVerifier,
         },
         discovery,
       )
