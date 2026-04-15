@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,8 @@ import {
   SURFACE_FROSTED,
   SURFACE_INPUT,
   BORDER,
+  HANDLE,
+  OVERLAY,
   TEXT_HEADING,
   TEXT_PRIMARY,
   TEXT_BODY,
@@ -30,14 +32,105 @@ import {
   TEXT_PLACEHOLDER,
 } from '../src/theme';
 
+// ─── Wheel picker ────────────────────────────────────────────────────────────
+
+const ITEM_H = 44;
+const VISIBLE = 5; // must be odd
+
+interface WheelPickerProps {
+  min: number;
+  max: number;
+  value: number;
+  onChange: (v: number) => void;
+}
+
+function WheelPicker({ min, max, value, onChange }: WheelPickerProps) {
+  const listRef = useRef<FlatList<number>>(null);
+  const numbers = useMemo(
+    () => Array.from({ length: max - min + 1 }, (_, i) => min + i),
+    [min, max],
+  );
+  const initIndex = Math.max(0, Math.min(value - min, numbers.length - 1));
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      listRef.current?.scrollToOffset({ offset: initIndex * ITEM_H, animated: false });
+    }, 60);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <View style={wp.container}>
+      <View style={wp.highlight} pointerEvents="none" />
+      <FlatList
+        ref={listRef}
+        data={numbers}
+        keyExtractor={String}
+        snapToInterval={ITEM_H}
+        decelerationRate="fast"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={wp.listContent}
+        getItemLayout={(_, index) => ({ length: ITEM_H, offset: ITEM_H * index, index })}
+        onMomentumScrollEnd={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_H);
+          const clamped = Math.max(0, Math.min(idx, numbers.length - 1));
+          onChange(numbers[clamped]);
+        }}
+        renderItem={({ item }) => (
+          <View style={wp.item}>
+            <Text style={wp.itemText}>{item}</Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
+const HALF = Math.floor(VISIBLE / 2);
+
+const wp = StyleSheet.create({
+  container: {
+    height: ITEM_H * VISIBLE,
+    flex: 1,
+    overflow: 'hidden',
+  },
+  highlight: {
+    position: 'absolute',
+    top: ITEM_H * HALF,
+    left: 8,
+    right: 8,
+    height: ITEM_H,
+    backgroundColor: `${APP_PRIMARY}18`,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: APP_PRIMARY,
+    zIndex: 1,
+  },
+  listContent: {
+    paddingVertical: ITEM_H * HALF,
+  },
+  item: {
+    height: ITEM_H,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  itemText: {
+    fontSize: 20,
+    color: TEXT_PRIMARY,
+  },
+});
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
+
 export default function HomeScreen() {
   const router = useRouter();
   const { data: chapters, isLoading, isError: chaptersError } = useChapters();
 
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
-  const [fromVerse, setFromVerse] = useState('');
-  const [toVerse, setToVerse] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
+  const [fromVerse, setFromVerse] = useState(0);
+  const [toVerse, setToVerse] = useState(0);
+  const [surahModalVisible, setSurahModalVisible] = useState(false);
+  const [versePickerVisible, setVersePickerVisible] = useState(false);
   const [search, setSearch] = useState('');
   const [headerHeight, setHeaderHeight] = useState(0);
 
@@ -53,40 +146,34 @@ export default function HomeScreen() {
 
   const handleChapterSelect = (chapter: Chapter) => {
     setSelectedChapter(chapter);
-    setFromVerse('1');
-    setToVerse(String(chapter.verses_count));
-    setModalVisible(false);
+    setFromVerse(1);
+    setToVerse(chapter.verses_count);
+    setSurahModalVisible(false);
     setSearch('');
   };
 
   const handleBack = () => {
     setSelectedChapter(null);
-    setFromVerse('');
-    setToVerse('');
+    setFromVerse(0);
+    setToVerse(0);
     router.replace('/');
   };
 
-  const handleAddDetail = () => {
-    if (!selectedChapter) return;
-    const from = parseInt(fromVerse, 10);
-    const to = parseInt(toVerse, 10);
-    if (isNaN(from) || isNaN(to) || from < 1 || to > selectedChapter.verses_count || from > to)
-      return;
-    router.push({ pathname: '/playlist', params: { chapter: selectedChapter.id, from, to } });
+  const handleFromChange = (v: number) => {
+    setFromVerse(v);
+    if (v > toVerse) setToVerse(v);
   };
 
-  const canProceed =
-    !!selectedChapter &&
-    fromVerse.length > 0 &&
-    toVerse.length > 0;
+  const handleAddDetail = () => {
+    if (!selectedChapter || fromVerse < 1 || toVerse < fromVerse) return;
+    router.push({ pathname: '/playlist', params: { chapter: selectedChapter.id, from: fromVerse, to: toVerse } });
+  };
+
+  const canProceed = !!selectedChapter && fromVerse > 0 && toVerse >= fromVerse;
 
   useEffect(() => {
     if (canProceed) {
-      Animated.timing(glowAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: false,
-      }).start();
+      Animated.timing(glowAnim, { toValue: 1, duration: 400, useNativeDriver: false }).start();
     } else {
       glowAnim.setValue(0);
     }
@@ -96,6 +183,8 @@ export default function HomeScreen() {
     inputRange: [0, 1],
     outputRange: [0, 0.9],
   });
+
+  const versesCount = selectedChapter?.verses_count ?? 1;
 
   return (
     <View style={styles.container}>
@@ -114,7 +203,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={styles.surahPill}
-            onPress={() => setModalVisible(true)}
+            onPress={() => setSurahModalVisible(true)}
             activeOpacity={0.7}
           >
             <Text style={styles.pillText} numberOfLines={1}>
@@ -126,35 +215,31 @@ export default function HomeScreen() {
             <Text style={styles.label}>verses</Text>
           </View>
 
-          <View style={styles.versePill}>
-            <TextInput
-              style={styles.verseInput}
-              value={fromVerse}
-              onChangeText={setFromVerse}
-              keyboardType="number-pad"
-              placeholder="1"
-              placeholderTextColor={TEXT_PLACEHOLDER}
-              editable={!!selectedChapter}
-              textAlign="center"
-            />
-          </View>
+          {/* From verse pill */}
+          <TouchableOpacity
+            style={[styles.versePill, !selectedChapter && styles.versePillDisabled]}
+            onPress={() => selectedChapter && setVersePickerVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.pillText, !fromVerse && styles.pillPlaceholder]}>
+              {fromVerse > 0 ? String(fromVerse) : '1'}
+            </Text>
+          </TouchableOpacity>
 
           <View style={styles.labelWrap}>
             <Text style={styles.label}>to</Text>
           </View>
 
-          <View style={styles.versePill}>
-            <TextInput
-              style={styles.verseInput}
-              value={toVerse}
-              onChangeText={setToVerse}
-              keyboardType="number-pad"
-              placeholder="…"
-              placeholderTextColor={TEXT_PLACEHOLDER}
-              editable={!!selectedChapter}
-              textAlign="center"
-            />
-          </View>
+          {/* To verse pill */}
+          <TouchableOpacity
+            style={[styles.versePill, !selectedChapter && styles.versePillDisabled]}
+            onPress={() => selectedChapter && setVersePickerVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.pillText, !toVerse && styles.pillPlaceholder]}>
+              {toVerse > 0 ? String(toVerse) : '…'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -182,22 +267,75 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
+      {/* Verse range picker — bottom sheet */}
+      <Modal
+        visible={versePickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setVersePickerVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => setVersePickerVisible(false)}
+        />
+        <View style={styles.pickerSheet}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.sheetTitle}>Verse range</Text>
+
+          <View style={styles.pickerRow}>
+            {/* From column */}
+            <View style={styles.pickerCol}>
+              <Text style={styles.pickerLabel}>From</Text>
+              <WheelPicker
+                min={1}
+                max={versesCount}
+                value={fromVerse > 0 ? fromVerse : 1}
+                onChange={handleFromChange}
+              />
+            </View>
+
+            <View style={styles.pickerDivider} />
+
+            {/* To column — key resets when fromVerse changes so min is always respected */}
+            <View style={styles.pickerCol}>
+              <Text style={styles.pickerLabel}>To</Text>
+              <WheelPicker
+                key={fromVerse}
+                min={fromVerse > 0 ? fromVerse : 1}
+                max={versesCount}
+                value={toVerse > 0 ? Math.max(toVerse, fromVerse) : versesCount}
+                onChange={setToVerse}
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.doneBtn}
+            onPress={() => setVersePickerVisible(false)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.doneBtnText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
       {/* Surah picker modal */}
       <Modal
-        visible={modalVisible}
+        visible={surahModalVisible}
         animationType="slide"
         transparent
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => setSurahModalVisible(false)}
       >
         <TouchableOpacity
           style={StyleSheet.absoluteFill}
           activeOpacity={1}
-          onPress={() => setModalVisible(false)}
+          onPress={() => setSurahModalVisible(false)}
         />
         <View style={[styles.modalSheet, { marginTop: headerHeight }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Choose Surah</Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)} hitSlop={8}>
+            <TouchableOpacity onPress={() => setSurahModalVisible(false)} hitSlop={8}>
               <Text style={styles.modalClose}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -304,9 +442,15 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: APP_PRIMARY,
     borderRadius: 28,
-    width: 54,
+    minWidth: 54,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  versePillDisabled: {
+    opacity: 0.4,
   },
 
   pillText: {
@@ -315,13 +459,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  verseInput: {
-    fontSize: 20,
-    color: TEXT_BODY,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    width: '100%',
-    textAlign: 'center',
+  pillPlaceholder: {
+    color: TEXT_PLACEHOLDER,
   },
 
   // CTA button
@@ -359,7 +498,69 @@ const styles = StyleSheet.create({
     color: TEXT_PLACEHOLDER,
   },
 
-  // Modal
+  // Verse range picker sheet
+  backdrop: {
+    flex: 1,
+    backgroundColor: OVERLAY,
+  },
+  pickerSheet: {
+    backgroundColor: SURFACE,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: 12,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    backgroundColor: HANDLE,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: TEXT_PRIMARY,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  pickerCol: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  pickerLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: TEXT_MUTED,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  pickerDivider: {
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: BORDER,
+    marginHorizontal: 16,
+  },
+  doneBtn: {
+    marginTop: 24,
+    backgroundColor: APP_PRIMARY,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  doneBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: SURFACE,
+  },
+
+  // Surah modal
   modalSheet: {
     flex: 1,
     backgroundColor: SURFACE,
