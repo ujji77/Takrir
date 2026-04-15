@@ -106,9 +106,9 @@ export default function PlayerScreen() {
     return 'lg';
   };
   const TIER_CONFIG = {
-    sm: { minH: 10, maxH: 25, minOp: 0.35, maxOp: 1 },
-    md: { minH: 15, maxH: 50, minOp: 0.35, maxOp: 1 },
-    lg: { minH: 15, maxH: 70, minOp: 0.35, maxOp: 1 },
+    sm: { minH: 10, maxH: 25, minOp: 0.1, maxOp: 0.35 },
+    md: { minH: 15, maxH: 50, minOp: 0.1, maxOp: 0.35 },
+    lg: { minH: 15, maxH: 70, minOp: 0.1, maxOp: 0.35 },
   };
 
   useEffect(() => {
