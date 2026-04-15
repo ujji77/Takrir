@@ -61,7 +61,7 @@ export default function PlaylistScreen() {
   const setRepeat = (verseKey: string, delta: number) => {
     setRepeatCounts((prev) => ({
       ...prev,
-      [verseKey]: Math.max(1, (prev[verseKey] ?? 1) + delta),
+      [verseKey]: Math.min(99, Math.max(1, (prev[verseKey] ?? 1) + delta)),
     }));
   };
 
@@ -180,7 +180,6 @@ export default function PlaylistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: SURFACE_SCREEN,
   },
   center: {
     flex: 1,
@@ -218,8 +217,8 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: BORDER_STRONG,
+    height: 1,
+    backgroundColor: '#FFFFFF',
     marginVertical: 20,
   },
 
@@ -276,6 +275,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: '#D2D2D2',
+    backgroundColor: '#FFFFFFB2',
   },
   repeaterDown: {
     width: 35,

@@ -34,7 +34,7 @@ export default function HeaderMenu() {
   return (
     <View>
       <TouchableOpacity onPress={() => setVisible(true)} hitSlop={12} style={styles.dotsBtn}>
-        <DotsThree size={24} color={APP_PRIMARY} weight="bold" />
+        <DotsThree size={24} color="#222222" weight="bold" />
       </TouchableOpacity>
 
       <Modal

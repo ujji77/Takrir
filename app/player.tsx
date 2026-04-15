@@ -9,6 +9,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -190,7 +191,7 @@ export default function PlayerScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={handleBack} hitSlop={12} style={styles.headerIconWrap}>
-            <CaretLeft size={22} color={APP_PRIMARY} weight="bold" />
+            <CaretLeft size={22} color="#222222" weight="bold" />
           </TouchableOpacity>
           <View style={styles.headerIconWrap} />
         </View>
@@ -248,17 +249,26 @@ export default function PlayerScreen() {
 
         {/* Playback controls */}
         <View style={styles.controlsRow}>
-          <TouchableOpacity onPress={() => skipTo(currentIndex - 1)} disabled={currentIndex === 0} hitSlop={12}>
-            <SkipBack size={26} color={APP_PRIMARY} weight="fill" style={currentIndex === 0 ? styles.dimmed : undefined} />
+          <TouchableOpacity onPress={() => skipTo(currentIndex - 1)} disabled={currentIndex === 0} hitSlop={12} style={currentIndex === 0 ? styles.dimmed : undefined}>
+            <SkipBack size={26} color={APP_PRIMARY} weight="regular" />
           </TouchableOpacity>
+
+          {/* Play/pause — thin border, frost inner circle */}
           <TouchableOpacity style={styles.playBtn} onPress={togglePlay} activeOpacity={0.8}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.4)', 'rgba(238,238,238,0.4)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.playBtnFrost}
+            />
             {isPlaying
-              ? <Pause size={36} color="#fff" weight="fill" />
-              : <Play size={36} color="#fff" weight="fill" style={{ marginLeft: 4 }} />
+              ? <Pause size={36} color={APP_PRIMARY} weight="fill" />
+              : <Play size={36} color={APP_PRIMARY} weight="fill" style={{ marginLeft: 4 }} />
             }
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => skipTo(currentIndex + 1)} disabled={currentIndex === items.length - 1} hitSlop={12}>
-            <SkipForward size={26} color={APP_PRIMARY} weight="fill" style={currentIndex === items.length - 1 ? styles.dimmed : undefined} />
+
+          <TouchableOpacity onPress={() => skipTo(currentIndex + 1)} disabled={currentIndex === items.length - 1} hitSlop={12} style={currentIndex === items.length - 1 ? styles.dimmed : undefined}>
+            <SkipForward size={26} color={APP_PRIMARY} weight="regular" />
           </TouchableOpacity>
         </View>
 
@@ -394,7 +404,7 @@ export default function PlayerScreen() {
           <ScrollView showsVerticalScrollIndicator={false}>
             {items.map((item, index) => (
               <View key={item.verseKey}>
-                <View style={styles.playlistRow}>
+                <View style={[styles.playlistRow, index === currentIndex && styles.playlistRowActive]}>
                   <TouchableOpacity
                     onPress={() => { skipTo(index); setPlaylistVisible(false); }}
                     hitSlop={8}
@@ -427,21 +437,16 @@ export default function PlayerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: SURFACE_SCREEN },
+  container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   emptyText: { fontSize: 16, color: TEXT_SECONDARY },
 
   // Header
   header: {
-    backgroundColor: SURFACE,
+    backgroundColor: 'transparent',
     paddingHorizontal: 30,
     paddingBottom: 16,
     gap: 10,
-    shadowColor: APP_PRIMARY,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
   },
   headerRow: {
     flexDirection: 'row',
@@ -528,9 +533,17 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: APP_PRIMARY,
+    borderWidth: 0.5,
+    borderColor: APP_PRIMARY,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  playBtnFrost: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
 
   // Icon bar
@@ -570,13 +583,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: SURFACE,
+    backgroundColor: '#FAFAFA',
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   drawerChipActive: {
-    backgroundColor: APP_PRIMARY_LIGHT,
+    borderColor: '#B59370',
   },
   drawerChipText: {
     fontSize: 15,
@@ -622,6 +637,10 @@ const styles = StyleSheet.create({
   playlistRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'transparent',
+    borderRadius: 8,
+    paddingHorizontal: 8,
     alignItems: 'center',
     paddingVertical: 8,
   },
@@ -633,6 +652,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '400',
     color: TEXT_PRIMARY,
+  },
+  playlistRowActive: {
+    backgroundColor: '#FAFAFA',
+    borderColor: APP_PRIMARY,
   },
   playlistVerseKeyActive: {
     color: APP_PRIMARY,

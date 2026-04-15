@@ -28,15 +28,10 @@ export default function PlaylistHeader({ onBack }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: SURFACE,
+    backgroundColor: 'transparent',
     paddingBottom: 16,
     paddingHorizontal: 30,
     gap: 10,
-    shadowColor: APP_PRIMARY,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
   },
   topRow: {
     flexDirection: 'row',
@@ -49,7 +44,7 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 18,
-    color: APP_PRIMARY,
+    color: '#222222',
   },
   title: {
     fontSize: 30,
