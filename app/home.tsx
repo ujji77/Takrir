@@ -6,6 +6,7 @@ import {
   TextInput,
   Modal,
   FlatList,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
   Animated,
@@ -45,7 +46,7 @@ interface WheelPickerProps {
 }
 
 function WheelPicker({ min, max, value, onChange }: WheelPickerProps) {
-  const listRef = useRef<FlatList<number>>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const numbers = useMemo(
     () => Array.from({ length: max - min + 1 }, (_, i) => min + i),
     [min, max],
@@ -54,34 +55,33 @@ function WheelPicker({ min, max, value, onChange }: WheelPickerProps) {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      listRef.current?.scrollToOffset({ offset: initIndex * ITEM_H, animated: false });
-    }, 60);
+      scrollRef.current?.scrollTo({ y: initIndex * ITEM_H, animated: false });
+    }, 80);
     return () => clearTimeout(t);
   }, []);
 
   return (
     <View style={wp.container}>
       <View style={wp.highlight} pointerEvents="none" />
-      <FlatList
-        ref={listRef}
-        data={numbers}
-        keyExtractor={String}
+      <ScrollView
+        ref={scrollRef}
         snapToInterval={ITEM_H}
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={wp.listContent}
-        getItemLayout={(_, index) => ({ length: ITEM_H, offset: ITEM_H * index, index })}
+        scrollEventThrottle={16}
         onMomentumScrollEnd={(e) => {
           const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_H);
           const clamped = Math.max(0, Math.min(idx, numbers.length - 1));
           onChange(numbers[clamped]);
         }}
-        renderItem={({ item }) => (
-          <View style={wp.item}>
-            <Text style={wp.itemText}>{item}</Text>
+      >
+        {numbers.map((n) => (
+          <View key={n} style={wp.item}>
+            <Text style={wp.itemText}>{n}</Text>
           </View>
-        )}
-      />
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -92,7 +92,6 @@ const wp = StyleSheet.create({
   container: {
     height: ITEM_H * VISIBLE,
     flex: 1,
-    overflow: 'hidden',
   },
   highlight: {
     position: 'absolute',
