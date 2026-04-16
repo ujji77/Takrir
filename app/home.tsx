@@ -19,6 +19,7 @@ import type { Chapter } from '../src/types/api';
 import {
   APP_PRIMARY,
   SURFACE,
+  SURFACE_SCREEN,
   SURFACE_FROSTED,
   SURFACE_INPUT,
   BORDER,
@@ -34,15 +35,16 @@ import {
 
 // ─── Verse grid popover ───────────────────────────────────────────────────────
 
-const GRID_COLS           = 6;
-const CELL_GAP            = 6;
-const CARD_H_PAD          = 14; // horizontal padding inside the card (each side)
-const CONTENT_H_PAD       = 30; // screen content paddingHorizontal (each side)
-const SCREEN_W            = Dimensions.get('window').width;
-// Total space for cells = screen − content padding − card padding − gaps between cells
-const GRID_W              = SCREEN_W - CONTENT_H_PAD * 2 - CARD_H_PAD * 2;
-const CELL_SIZE           = Math.floor((GRID_W - (GRID_COLS - 1) * CELL_GAP) / GRID_COLS);
-const GRID_SCROLL_H       = 220; // fixed — always the same height regardless of verse count
+const GRID_COLS     = 6;
+const CELL_GAP      = 6;
+const CARD_BORDER   = 1.5;
+const CARD_H_PAD    = 12; // horizontal padding inside the card (each side)
+const CONTENT_H_PAD = 30; // screen content paddingHorizontal (each side)
+const SCREEN_W      = Dimensions.get('window').width;
+// Available width for the grid = screen − content padding − card padding − card border
+const GRID_W        = SCREEN_W - CONTENT_H_PAD * 2 - CARD_H_PAD * 2 - CARD_BORDER * 2;
+const CELL_SIZE     = Math.floor((GRID_W - (GRID_COLS - 1) * CELL_GAP) / GRID_COLS);
+const GRID_SCROLL_H = 245; // fixed — 4.5 rows visible to hint at scrollability
 
 type Phase = 'from' | 'to';
 
@@ -117,39 +119,48 @@ function VerseGridPopover({ versesCount, fromVerse, toVerse, phase, onTap, onClo
 const pop = StyleSheet.create({
   card: {
     marginTop: 14,
-    backgroundColor: SURFACE,
-    borderRadius: 16,
-    borderWidth: 1,
+    backgroundColor: SURFACE_SCREEN,
+    borderRadius: 18,
+    borderWidth: CARD_BORDER,
     borderColor: APP_PRIMARY,
     shadowColor: APP_PRIMARY,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 5,
   },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    paddingBottom: 4,
     paddingHorizontal: CARD_H_PAD,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: `${APP_PRIMARY}40`,
   },
 
   hint: {
-    fontSize: 12,
-    color: TEXT_PLACEHOLDER,
     flex: 1,
+    fontSize: 12,
+    fontWeight: '500',
+    color: APP_PRIMARY,
+    letterSpacing: 0.2,
   },
 
   closeBtn: {
-    padding: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: `${APP_PRIMARY}18`,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 8,
   },
   closeBtnText: {
-    fontSize: 14,
-    color: TEXT_SECONDARY,
+    fontSize: 11,
+    fontWeight: '600',
+    color: APP_PRIMARY,
   },
 
   gridScroll: {
@@ -160,19 +171,20 @@ const pop = StyleSheet.create({
     flexWrap: 'wrap',
     gap: CELL_GAP,
     paddingHorizontal: CARD_H_PAD,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 14,
   },
 
   cell: {
     width: CELL_SIZE,
     height: CELL_SIZE,
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: SURFACE_INPUT,
+    backgroundColor: 'transparent',
   },
   cellInRange: {
-    backgroundColor: `${APP_PRIMARY}20`,
+    backgroundColor: `${APP_PRIMARY}18`,
   },
   cellEndpoint: {
     backgroundColor: APP_PRIMARY,
@@ -183,8 +195,8 @@ const pop = StyleSheet.create({
 
   cellText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: TEXT_BODY,
+    fontWeight: '400',
+    color: TEXT_MUTED,
   },
   cellTextInRange: {
     color: APP_PRIMARY,
