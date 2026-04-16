@@ -10,6 +10,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Animated,
+  Dimensions,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useChapters } from '../src/hooks/useChapters';
@@ -17,12 +18,11 @@ import AppHeader from '../src/components/AppHeader';
 import type { Chapter } from '../src/types/api';
 import {
   APP_PRIMARY,
+  APP_PRIMARY_ACTIVE,
   SURFACE,
-  SURFACE_SCREEN,
   SURFACE_FROSTED,
   SURFACE_INPUT,
   BORDER,
-  HANDLE,
   OVERLAY,
   TEXT_HEADING,
   TEXT_PRIMARY,
@@ -33,89 +33,340 @@ import {
   TEXT_PLACEHOLDER,
 } from '../src/theme';
 
-// ─── Wheel picker ────────────────────────────────────────────────────────────
+// ─── Verse grid picker ────────────────────────────────────────────────────────
 
-const ITEM_H = 44;
-const VISIBLE = 5; // must be odd
+const GRID_COLS = 5;
+// Modal is fixed 320 wide; 20px padding each side → 280px content
+// 5 cells + 4 gaps of 8 = 5*48 + 32 = 272 ≤ 280 ✓
+const CELL_SIZE   = 48;
+const CELL_H      = 42;
+const CELL_GAP    = 8;
+const MODAL_W     = 320;
+const MODAL_H     = 460;
+const GRID_SCROLL_H = 280;
 
-interface WheelPickerProps {
-  min: number;
-  max: number;
-  value: number;
-  onChange: (v: number) => void;
+type Phase = 'from' | 'to';
+
+interface VerseGridPickerProps {
+  visible: boolean;
+  versesCount: number;
+  initialFrom: number;
+  initialTo: number;
+  initialPhase: Phase;
+  onDone: (from: number, to: number) => void;
+  onClose: () => void;
 }
 
-function WheelPicker({ min, max, value, onChange }: WheelPickerProps) {
-  const scrollRef = useRef<ScrollView>(null);
-  const numbers = useMemo(
-    () => Array.from({ length: max - min + 1 }, (_, i) => min + i),
-    [min, max],
-  );
-  const initIndex = Math.max(0, Math.min(value - min, numbers.length - 1));
+function VerseGridPicker({
+  visible,
+  versesCount,
+  initialFrom,
+  initialTo,
+  initialPhase,
+  onDone,
+  onClose,
+}: VerseGridPickerProps) {
+  const [draftFrom, setDraftFrom] = useState(initialFrom);
+  const [draftTo,   setDraftTo]   = useState(initialTo);
+  const [phase,     setPhase]     = useState<Phase>(initialPhase);
 
+  // Re-initialise draft whenever the modal opens
   useEffect(() => {
-    const t = setTimeout(() => {
-      scrollRef.current?.scrollTo({ y: initIndex * ITEM_H, animated: false });
-    }, 80);
-    return () => clearTimeout(t);
-  }, []);
+    if (visible) {
+      setDraftFrom(initialFrom);
+      setDraftTo(initialTo);
+      setPhase(initialPhase);
+    }
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTap = (n: number) => {
+    if (phase === 'from') {
+      setDraftFrom(n);
+      // If new start overtakes the end, push the end forward
+      if (n > draftTo) setDraftTo(n);
+      setPhase('to');
+    } else {
+      // 'to' phase
+      if (n < draftFrom) {
+        // Tapped before current start → new start, old start becomes end
+        setDraftTo(draftFrom);
+        setDraftFrom(n);
+      } else {
+        setDraftTo(n);
+      }
+      // Stay in 'to' so user can keep refining the end
+    }
+  };
+
+  const numbers = useMemo(
+    () => Array.from({ length: versesCount }, (_, i) => i + 1),
+    [versesCount],
+  );
+
+  const isSingle = draftFrom === draftTo;
 
   return (
-    <View style={wp.container}>
-      <View style={wp.highlight} pointerEvents="none" />
-      <ScrollView
-        ref={scrollRef}
-        snapToInterval={ITEM_H}
-        decelerationRate="fast"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={wp.listContent}
-        scrollEventThrottle={16}
-        onMomentumScrollEnd={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_H);
-          const clamped = Math.max(0, Math.min(idx, numbers.length - 1));
-          onChange(numbers[clamped]);
-        }}
-      >
-        {numbers.map((n) => (
-          <View key={n} style={wp.item}>
-            <Text style={wp.itemText}>{n}</Text>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={vg.overlay}>
+        {/* Backdrop tap-to-dismiss */}
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+
+        <View style={vg.card}>
+          {/* Header */}
+          <View style={vg.header}>
+            <Text style={vg.headerTitle}>Select verses</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={10} style={vg.closeBtn}>
+              <Text style={vg.closeBtnText}>✕</Text>
+            </TouchableOpacity>
           </View>
-        ))}
-      </ScrollView>
-    </View>
+
+          {/* Range indicator chips — tap to switch active phase */}
+          <View style={vg.rangeRow}>
+            <TouchableOpacity
+              style={[vg.rangeChip, phase === 'from' && vg.rangeChipActive]}
+              onPress={() => setPhase('from')}
+              activeOpacity={0.7}
+            >
+              <Text style={[vg.rangeChipLabel, phase === 'from' && vg.rangeChipLabelActive]}>
+                From
+              </Text>
+              <Text style={[vg.rangeChipVal, phase === 'from' && vg.rangeChipValActive]}>
+                {draftFrom}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={vg.rangeArrow}>
+              <Text style={vg.rangeArrowText}>→</Text>
+            </View>
+
+            <TouchableOpacity
+              style={[vg.rangeChip, phase === 'to' && vg.rangeChipActive]}
+              onPress={() => setPhase('to')}
+              activeOpacity={0.7}
+            >
+              <Text style={[vg.rangeChipLabel, phase === 'to' && vg.rangeChipLabelActive]}>
+                To
+              </Text>
+              <Text style={[vg.rangeChipVal, phase === 'to' && vg.rangeChipValActive]}>
+                {draftTo}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Phase hint */}
+          <Text style={vg.hint}>
+            {phase === 'from' ? 'Tap a verse to set the start' : 'Tap a verse to set the end'}
+          </Text>
+
+          {/* Number grid */}
+          <ScrollView
+            style={vg.gridScroll}
+            contentContainerStyle={vg.grid}
+            showsVerticalScrollIndicator={false}
+          >
+            {numbers.map((n) => {
+              const isFrom     = n === draftFrom;
+              const isTo       = n === draftTo;
+              const isEndpoint = isFrom || isTo;
+              const inRange    = n > draftFrom && n < draftTo;
+
+              return (
+                <TouchableOpacity
+                  key={n}
+                  onPress={() => handleTap(n)}
+                  activeOpacity={0.65}
+                  style={[
+                    vg.cell,
+                    inRange     && vg.cellInRange,
+                    isEndpoint  && !isSingle && vg.cellEndpoint,
+                    isSingle    && isEndpoint && vg.cellSingle,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      vg.cellText,
+                      inRange    && vg.cellTextInRange,
+                      isEndpoint && vg.cellTextSelected,
+                    ]}
+                  >
+                    {n}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* Done */}
+          <TouchableOpacity
+            style={vg.doneBtn}
+            onPress={() => onDone(draftFrom, draftTo)}
+            activeOpacity={0.8}
+          >
+            <Text style={vg.doneBtnText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
-const HALF = Math.floor(VISIBLE / 2);
-
-const wp = StyleSheet.create({
-  container: {
-    height: ITEM_H * VISIBLE,
+const vg = StyleSheet.create({
+  overlay: {
     flex: 1,
-  },
-  highlight: {
-    position: 'absolute',
-    top: ITEM_H * HALF,
-    left: 8,
-    right: 8,
-    height: ITEM_H,
-    backgroundColor: `${APP_PRIMARY}18`,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: APP_PRIMARY,
-    zIndex: 1,
-  },
-  listContent: {
-    paddingVertical: ITEM_H * HALF,
-  },
-  item: {
-    height: ITEM_H,
+    backgroundColor: OVERLAY,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  itemText: {
-    fontSize: 20,
+
+  card: {
+    width: MODAL_W,
+    height: MODAL_H,
+    backgroundColor: SURFACE,
+    borderRadius: 20,
+    overflow: 'hidden',
+    // Shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: BORDER,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
     color: TEXT_PRIMARY,
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  closeBtnText: {
+    fontSize: 16,
+    color: TEXT_SECONDARY,
+  },
+
+  rangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    gap: 12,
+  },
+  rangeChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    backgroundColor: SURFACE_INPUT,
+    gap: 2,
+  },
+  rangeChipActive: {
+    borderColor: APP_PRIMARY,
+    backgroundColor: `${APP_PRIMARY}12`,
+  },
+  rangeChipLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: TEXT_SECONDARY,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  rangeChipLabelActive: {
+    color: APP_PRIMARY,
+  },
+  rangeChipVal: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: TEXT_MUTED,
+  },
+  rangeChipValActive: {
+    color: APP_PRIMARY,
+  },
+  rangeArrow: {
+    paddingBottom: 2,
+  },
+  rangeArrowText: {
+    fontSize: 18,
+    color: TEXT_TERTIARY,
+  },
+
+  hint: {
+    fontSize: 12,
+    color: TEXT_PLACEHOLDER,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+
+  gridScroll: {
+    height: GRID_SCROLL_H,
+    marginHorizontal: 20,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: CELL_GAP,
+    paddingVertical: 12,
+  },
+
+  cell: {
+    width: CELL_SIZE,
+    height: CELL_H,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: SURFACE_INPUT,
+  },
+  cellInRange: {
+    backgroundColor: `${APP_PRIMARY}20`,
+  },
+  cellEndpoint: {
+    backgroundColor: APP_PRIMARY,
+  },
+  cellSingle: {
+    backgroundColor: APP_PRIMARY,
+  },
+
+  cellText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: TEXT_BODY,
+  },
+  cellTextInRange: {
+    color: APP_PRIMARY,
+    fontWeight: '600',
+  },
+  cellTextSelected: {
+    color: SURFACE,
+    fontWeight: '700',
+  },
+
+  doneBtn: {
+    marginHorizontal: 20,
+    marginTop: 'auto' as any,
+    marginBottom: 20,
+    backgroundColor: APP_PRIMARY,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  doneBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: SURFACE,
   },
 });
 
@@ -127,11 +378,12 @@ export default function HomeScreen() {
 
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   const [fromVerse, setFromVerse] = useState(0);
-  const [toVerse, setToVerse] = useState(0);
-  const [surahModalVisible, setSurahModalVisible] = useState(false);
+  const [toVerse,   setToVerse]   = useState(0);
+  const [surahModalVisible,  setSurahModalVisible]  = useState(false);
   const [versePickerVisible, setVersePickerVisible] = useState(false);
-  const [search, setSearch] = useState('');
-  const [headerHeight, setHeaderHeight] = useState(0);
+  const [versePickerPhase,   setVersePickerPhase]   = useState<Phase>('from');
+  const [search,             setSearch]             = useState('');
+  const [headerHeight,       setHeaderHeight]       = useState(0);
 
   const glowAnim = useRef(new Animated.Value(0)).current;
 
@@ -158,9 +410,16 @@ export default function HomeScreen() {
     router.replace('/');
   };
 
-  const handleFromChange = (v: number) => {
-    setFromVerse(v);
-    if (v > toVerse) setToVerse(v);
+  const openVersePicker = (phase: Phase) => {
+    if (!selectedChapter) return;
+    setVersePickerPhase(phase);
+    setVersePickerVisible(true);
+  };
+
+  const handleVerseDone = (from: number, to: number) => {
+    setFromVerse(from);
+    setToVerse(to);
+    setVersePickerVisible(false);
   };
 
   const handleAddDetail = () => {
@@ -200,6 +459,7 @@ export default function HomeScreen() {
             <Text style={styles.label}>I am learning surah</Text>
           </View>
 
+          {/* Surah pill */}
           <TouchableOpacity
             style={styles.surahPill}
             onPress={() => setSurahModalVisible(true)}
@@ -217,11 +477,11 @@ export default function HomeScreen() {
           {/* From verse pill */}
           <TouchableOpacity
             style={[styles.versePill, !selectedChapter && styles.versePillDisabled]}
-            onPress={() => selectedChapter && setVersePickerVisible(true)}
+            onPress={() => openVersePicker('from')}
             activeOpacity={0.7}
           >
             <Text style={[styles.pillText, !fromVerse && styles.pillPlaceholder]}>
-              {fromVerse > 0 ? String(fromVerse) : '1'}
+              {fromVerse > 0 ? String(fromVerse) : '–'}
             </Text>
           </TouchableOpacity>
 
@@ -232,11 +492,11 @@ export default function HomeScreen() {
           {/* To verse pill */}
           <TouchableOpacity
             style={[styles.versePill, !selectedChapter && styles.versePillDisabled]}
-            onPress={() => selectedChapter && setVersePickerVisible(true)}
+            onPress={() => openVersePicker('to')}
             activeOpacity={0.7}
           >
             <Text style={[styles.pillText, !toVerse && styles.pillPlaceholder]}>
-              {toVerse > 0 ? String(toVerse) : '…'}
+              {toVerse > 0 ? String(toVerse) : '–'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -266,58 +526,16 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
-      {/* Verse range picker — bottom sheet */}
-      <Modal
+      {/* Verse grid picker */}
+      <VerseGridPicker
         visible={versePickerVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setVersePickerVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={() => setVersePickerVisible(false)}
-        />
-        <View style={styles.pickerSheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>Verse range</Text>
-
-          <View style={styles.pickerRow}>
-            {/* From column */}
-            <View style={styles.pickerCol}>
-              <Text style={styles.pickerLabel}>From</Text>
-              <WheelPicker
-                min={1}
-                max={versesCount}
-                value={fromVerse > 0 ? fromVerse : 1}
-                onChange={handleFromChange}
-              />
-            </View>
-
-            <View style={styles.pickerDivider} />
-
-            {/* To column — key resets when fromVerse changes so min is always respected */}
-            <View style={styles.pickerCol}>
-              <Text style={styles.pickerLabel}>To</Text>
-              <WheelPicker
-                key={fromVerse}
-                min={fromVerse > 0 ? fromVerse : 1}
-                max={versesCount}
-                value={toVerse > 0 ? Math.max(toVerse, fromVerse) : versesCount}
-                onChange={setToVerse}
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.doneBtn}
-            onPress={() => setVersePickerVisible(false)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.doneBtnText}>Done</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+        versesCount={versesCount}
+        initialFrom={fromVerse > 0 ? fromVerse : 1}
+        initialTo={toVerse > 0 ? toVerse : versesCount}
+        initialPhase={versePickerPhase}
+        onDone={handleVerseDone}
+        onClose={() => setVersePickerVisible(false)}
+      />
 
       {/* Surah picker modal */}
       <Modal
@@ -494,68 +712,6 @@ const styles = StyleSheet.create({
 
   ctaTextDisabled: {
     color: TEXT_PLACEHOLDER,
-  },
-
-  // Verse range picker sheet
-  backdrop: {
-    flex: 1,
-    backgroundColor: OVERLAY,
-  },
-  pickerSheet: {
-    backgroundColor: SURFACE,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingTop: 12,
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    backgroundColor: HANDLE,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  sheetTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-  },
-  pickerCol: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
-  },
-  pickerLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: TEXT_MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  pickerDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: BORDER,
-    marginHorizontal: 16,
-  },
-  doneBtn: {
-    marginTop: 24,
-    backgroundColor: APP_PRIMARY,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  doneBtnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: SURFACE,
   },
 
   // Surah modal
