@@ -3,7 +3,7 @@
     "name": "Takrir",
     "slug": "takrir",
     "scheme": "takrir",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/favicon.png",
     "userInterfaceStyle": "light",

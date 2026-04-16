@@ -250,7 +250,7 @@ export default function PlayerScreen() {
         {/* Playback controls */}
         <View style={styles.controlsRow}>
           <TouchableOpacity onPress={() => skipTo(currentIndex - 1)} disabled={currentIndex === 0} hitSlop={12} style={currentIndex === 0 ? styles.dimmed : undefined}>
-            <SkipBack size={26} color={APP_PRIMARY} weight="regular" />
+            <SkipBack size={26} color={APP_PRIMARY} weight="fill" />
           </TouchableOpacity>
 
           {/* Play/pause — thin border, frost inner circle */}
@@ -268,26 +268,26 @@ export default function PlayerScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => skipTo(currentIndex + 1)} disabled={currentIndex === items.length - 1} hitSlop={12} style={currentIndex === items.length - 1 ? styles.dimmed : undefined}>
-            <SkipForward size={26} color={APP_PRIMARY} weight="regular" />
+            <SkipForward size={26} color={APP_PRIMARY} weight="fill" />
           </TouchableOpacity>
         </View>
 
         {/* Icon bar */}
         <View style={styles.iconBar}>
           <View style={styles.iconBarLeft}>
-            <TouchableOpacity onPress={() => selectDrawer('arabic')} hitSlop={10} style={{ opacity: activeDrawer === 'arabic' ? 1 : showArabic ? 0.6 : 0.35 }}>
+            <TouchableOpacity onPress={() => selectDrawer('arabic')} hitSlop={10} style={{ opacity: !showArabic && activeDrawer !== 'arabic' ? 0.45 : 1 }}>
               {showArabic ? <Eye size={24} color={APP_PRIMARY} /> : <EyeSlash size={24} color={APP_PRIMARY} />}
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => selectDrawer('fontSize')} hitSlop={10} style={{ opacity: activeDrawer === 'fontSize' ? 1 : 0.6 }}>
+            <TouchableOpacity onPress={() => selectDrawer('fontSize')} hitSlop={10}>
               <TextAa size={24} color={APP_PRIMARY} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => selectDrawer('font')} hitSlop={10} style={{ opacity: activeDrawer === 'font' ? 1 : 0.6 }}>
+            <TouchableOpacity onPress={() => selectDrawer('font')} hitSlop={10}>
               <Translate size={24} color={APP_PRIMARY} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => selectDrawer('speed')} hitSlop={10} style={styles.speedBadge}>
               <Text style={[styles.speedText, activeDrawer === 'speed' && styles.speedTextActive]}>{playbackRate}×</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => selectDrawer('repeat')} hitSlop={10} style={{ opacity: repeatPlaylist ? (activeDrawer === 'repeat' ? 1 : 0.6) : (activeDrawer === 'repeat' ? 0.6 : 0.35) }}>
+            <TouchableOpacity onPress={() => selectDrawer('repeat')} hitSlop={10} style={{ opacity: !repeatPlaylist && activeDrawer !== 'repeat' ? 0.45 : 1 }}>
               <Repeat size={24} color={APP_PRIMARY} />
             </TouchableOpacity>
           </View>
@@ -565,7 +565,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: APP_PRIMARY,
     fontWeight: '600',
-    opacity: 0.6,
   },
   speedTextActive: {
     opacity: 1,
