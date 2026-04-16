@@ -18,7 +18,6 @@ import AppHeader from '../src/components/AppHeader';
 import type { Chapter } from '../src/types/api';
 import {
   APP_PRIMARY,
-  APP_PRIMARY_ACTIVE,
   SURFACE,
   SURFACE_FROSTED,
   SURFACE_INPUT,
@@ -33,298 +32,140 @@ import {
   TEXT_PLACEHOLDER,
 } from '../src/theme';
 
-// ─── Verse grid picker ────────────────────────────────────────────────────────
+// ─── Verse grid popover ───────────────────────────────────────────────────────
 
-const GRID_COLS = 5;
-// Modal is fixed 320 wide; 20px padding each side → 280px content
-// 5 cells + 4 gaps of 8 = 5*48 + 32 = 272 ≤ 280 ✓
-const CELL_SIZE   = 48;
-const CELL_H      = 42;
-const CELL_GAP    = 8;
-const MODAL_W     = 320;
-const MODAL_H     = 460;
-const GRID_SCROLL_H = 280;
+const GRID_COLS           = 6;
+const CELL_GAP            = 6;
+const CARD_H_PAD          = 14; // horizontal padding inside the card (each side)
+const CONTENT_H_PAD       = 30; // screen content paddingHorizontal (each side)
+const SCREEN_W            = Dimensions.get('window').width;
+// Total space for cells = screen − content padding − card padding − gaps between cells
+const GRID_W              = SCREEN_W - CONTENT_H_PAD * 2 - CARD_H_PAD * 2;
+const CELL_SIZE           = Math.floor((GRID_W - (GRID_COLS - 1) * CELL_GAP) / GRID_COLS);
+const GRID_SCROLL_H       = 220; // fixed — always the same height regardless of verse count
 
 type Phase = 'from' | 'to';
 
-interface VerseGridPickerProps {
-  visible: boolean;
+interface VerseGridPopoverProps {
   versesCount: number;
-  initialFrom: number;
-  initialTo: number;
-  initialPhase: Phase;
-  onDone: (from: number, to: number) => void;
+  fromVerse: number;
+  toVerse: number;
+  phase: Phase;
+  onTap: (n: number) => void;
   onClose: () => void;
 }
 
-function VerseGridPicker({
-  visible,
-  versesCount,
-  initialFrom,
-  initialTo,
-  initialPhase,
-  onDone,
-  onClose,
-}: VerseGridPickerProps) {
-  const [draftFrom, setDraftFrom] = useState(initialFrom);
-  const [draftTo,   setDraftTo]   = useState(initialTo);
-  const [phase,     setPhase]     = useState<Phase>(initialPhase);
-
-  // Re-initialise draft whenever the modal opens
-  useEffect(() => {
-    if (visible) {
-      setDraftFrom(initialFrom);
-      setDraftTo(initialTo);
-      setPhase(initialPhase);
-    }
-  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleTap = (n: number) => {
-    if (phase === 'from') {
-      setDraftFrom(n);
-      // If new start overtakes the end, push the end forward
-      if (n > draftTo) setDraftTo(n);
-      setPhase('to');
-    } else {
-      // 'to' phase
-      if (n < draftFrom) {
-        // Tapped before current start → new start, old start becomes end
-        setDraftTo(draftFrom);
-        setDraftFrom(n);
-      } else {
-        setDraftTo(n);
-      }
-      // Stay in 'to' so user can keep refining the end
-    }
-  };
-
+function VerseGridPopover({ versesCount, fromVerse, toVerse, phase, onTap, onClose }: VerseGridPopoverProps) {
   const numbers = useMemo(
     () => Array.from({ length: versesCount }, (_, i) => i + 1),
     [versesCount],
   );
-
-  const isSingle = draftFrom === draftTo;
+  const isSingle = fromVerse === toVerse;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={vg.overlay}>
-        {/* Backdrop tap-to-dismiss */}
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
-
-        <View style={vg.card}>
-          {/* Header */}
-          <View style={vg.header}>
-            <Text style={vg.headerTitle}>Select verses</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={10} style={vg.closeBtn}>
-              <Text style={vg.closeBtnText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Range indicator chips — tap to switch active phase */}
-          <View style={vg.rangeRow}>
-            <TouchableOpacity
-              style={[vg.rangeChip, phase === 'from' && vg.rangeChipActive]}
-              onPress={() => setPhase('from')}
-              activeOpacity={0.7}
-            >
-              <Text style={[vg.rangeChipLabel, phase === 'from' && vg.rangeChipLabelActive]}>
-                From
-              </Text>
-              <Text style={[vg.rangeChipVal, phase === 'from' && vg.rangeChipValActive]}>
-                {draftFrom}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={vg.rangeArrow}>
-              <Text style={vg.rangeArrowText}>→</Text>
-            </View>
-
-            <TouchableOpacity
-              style={[vg.rangeChip, phase === 'to' && vg.rangeChipActive]}
-              onPress={() => setPhase('to')}
-              activeOpacity={0.7}
-            >
-              <Text style={[vg.rangeChipLabel, phase === 'to' && vg.rangeChipLabelActive]}>
-                To
-              </Text>
-              <Text style={[vg.rangeChipVal, phase === 'to' && vg.rangeChipValActive]}>
-                {draftTo}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Phase hint */}
-          <Text style={vg.hint}>
-            {phase === 'from' ? 'Tap a verse to set the start' : 'Tap a verse to set the end'}
-          </Text>
-
-          {/* Number grid */}
-          <ScrollView
-            style={vg.gridScroll}
-            contentContainerStyle={vg.grid}
-            showsVerticalScrollIndicator={false}
-          >
-            {numbers.map((n) => {
-              const isFrom     = n === draftFrom;
-              const isTo       = n === draftTo;
-              const isEndpoint = isFrom || isTo;
-              const inRange    = n > draftFrom && n < draftTo;
-
-              return (
-                <TouchableOpacity
-                  key={n}
-                  onPress={() => handleTap(n)}
-                  activeOpacity={0.65}
-                  style={[
-                    vg.cell,
-                    inRange     && vg.cellInRange,
-                    isEndpoint  && !isSingle && vg.cellEndpoint,
-                    isSingle    && isEndpoint && vg.cellSingle,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      vg.cellText,
-                      inRange    && vg.cellTextInRange,
-                      isEndpoint && vg.cellTextSelected,
-                    ]}
-                  >
-                    {n}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* Done */}
-          <TouchableOpacity
-            style={vg.doneBtn}
-            onPress={() => onDone(draftFrom, draftTo)}
-            activeOpacity={0.8}
-          >
-            <Text style={vg.doneBtnText}>Done</Text>
-          </TouchableOpacity>
-        </View>
+    <View style={pop.card}>
+      <View style={pop.header}>
+        <Text style={pop.hint}>
+          {phase === 'from' ? 'Tap to set the start verse' : 'Tap to set the end verse'}
+        </Text>
+        <TouchableOpacity onPress={onClose} hitSlop={10} style={pop.closeBtn}>
+          <Text style={pop.closeBtnText}>✕</Text>
+        </TouchableOpacity>
       </View>
-    </Modal>
+
+      <ScrollView
+        style={pop.gridScroll}
+        contentContainerStyle={pop.grid}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+      >
+        {numbers.map((n) => {
+          const isFrom     = n === fromVerse;
+          const isTo       = n === toVerse;
+          const isEndpoint = isFrom || isTo;
+          const inRange    = n > fromVerse && n < toVerse;
+
+          return (
+            <TouchableOpacity
+              key={n}
+              onPress={() => onTap(n)}
+              activeOpacity={0.65}
+              style={[
+                pop.cell,
+                inRange    && pop.cellInRange,
+                isEndpoint && !isSingle && pop.cellEndpoint,
+                isSingle   && isEndpoint && pop.cellSingle,
+              ]}
+            >
+              <Text
+                style={[
+                  pop.cellText,
+                  inRange    && pop.cellTextInRange,
+                  isEndpoint && pop.cellTextSelected,
+                ]}
+              >
+                {n}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 }
 
-const vg = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: OVERLAY,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
+const pop = StyleSheet.create({
   card: {
-    width: MODAL_W,
-    height: MODAL_H,
+    marginTop: 14,
     backgroundColor: SURFACE,
-    borderRadius: 20,
-    overflow: 'hidden',
-    // Shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: APP_PRIMARY,
+    shadowColor: APP_PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowRadius: 12,
+    elevation: 4,
   },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  closeBtnText: {
-    fontSize: 16,
-    color: TEXT_SECONDARY,
-  },
-
-  rangeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    gap: 12,
-  },
-  rangeChip: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    backgroundColor: SURFACE_INPUT,
-    gap: 2,
-  },
-  rangeChipActive: {
-    borderColor: APP_PRIMARY,
-    backgroundColor: `${APP_PRIMARY}12`,
-  },
-  rangeChipLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: TEXT_SECONDARY,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  rangeChipLabelActive: {
-    color: APP_PRIMARY,
-  },
-  rangeChipVal: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: TEXT_MUTED,
-  },
-  rangeChipValActive: {
-    color: APP_PRIMARY,
-  },
-  rangeArrow: {
-    paddingBottom: 2,
-  },
-  rangeArrowText: {
-    fontSize: 18,
-    color: TEXT_TERTIARY,
+    paddingTop: 12,
+    paddingBottom: 4,
+    paddingHorizontal: CARD_H_PAD,
   },
 
   hint: {
     fontSize: 12,
     color: TEXT_PLACEHOLDER,
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 4,
+    flex: 1,
+  },
+
+  closeBtn: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  closeBtnText: {
+    fontSize: 14,
+    color: TEXT_SECONDARY,
   },
 
   gridScroll: {
     height: GRID_SCROLL_H,
-    marginHorizontal: 20,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: CELL_GAP,
-    paddingVertical: 12,
+    paddingHorizontal: CARD_H_PAD,
+    paddingVertical: 10,
   },
 
   cell: {
     width: CELL_SIZE,
-    height: CELL_H,
+    height: CELL_SIZE,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -341,7 +182,7 @@ const vg = StyleSheet.create({
   },
 
   cellText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
     color: TEXT_BODY,
   },
@@ -353,21 +194,6 @@ const vg = StyleSheet.create({
     color: SURFACE,
     fontWeight: '700',
   },
-
-  doneBtn: {
-    marginHorizontal: 20,
-    marginTop: 'auto' as any,
-    marginBottom: 20,
-    backgroundColor: APP_PRIMARY,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  doneBtnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: SURFACE,
-  },
 });
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
@@ -376,9 +202,9 @@ export default function HomeScreen() {
   const router = useRouter();
   const { data: chapters, isLoading, isError: chaptersError } = useChapters();
 
-  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
-  const [fromVerse, setFromVerse] = useState(0);
-  const [toVerse,   setToVerse]   = useState(0);
+  const [selectedChapter,    setSelectedChapter]    = useState<Chapter | null>(null);
+  const [fromVerse,          setFromVerse]          = useState(0);
+  const [toVerse,            setToVerse]            = useState(0);
   const [surahModalVisible,  setSurahModalVisible]  = useState(false);
   const [versePickerVisible, setVersePickerVisible] = useState(false);
   const [versePickerPhase,   setVersePickerPhase]   = useState<Phase>('from');
@@ -400,6 +226,7 @@ export default function HomeScreen() {
     setFromVerse(1);
     setToVerse(chapter.verses_count);
     setSurahModalVisible(false);
+    setVersePickerVisible(false);
     setSearch('');
   };
 
@@ -407,19 +234,35 @@ export default function HomeScreen() {
     setSelectedChapter(null);
     setFromVerse(0);
     setToVerse(0);
+    setVersePickerVisible(false);
     router.replace('/');
   };
 
   const openVersePicker = (phase: Phase) => {
     if (!selectedChapter) return;
+    // Tapping the already-active pill closes the picker (values already saved live)
+    if (versePickerVisible && versePickerPhase === phase) {
+      setVersePickerVisible(false);
+      return;
+    }
     setVersePickerPhase(phase);
     setVersePickerVisible(true);
   };
 
-  const handleVerseDone = (from: number, to: number) => {
-    setFromVerse(from);
-    setToVerse(to);
-    setVersePickerVisible(false);
+  const handleGridTap = (n: number) => {
+    if (versePickerPhase === 'from') {
+      setFromVerse(n);
+      if (n > toVerse) setToVerse(n);
+      setVersePickerPhase('to');
+    } else {
+      if (n < fromVerse) {
+        // Tapped before current start → new start, old start becomes end
+        setToVerse(fromVerse);
+        setFromVerse(n);
+      } else {
+        setToVerse(n);
+      }
+    }
   };
 
   const handleAddDetail = () => {
@@ -442,11 +285,22 @@ export default function HomeScreen() {
     outputRange: [0, 0.9],
   });
 
-  const versesCount = selectedChapter?.verses_count ?? 1;
+  const versesCount     = selectedChapter?.verses_count ?? 1;
+  const fromPillActive  = versePickerVisible && versePickerPhase === 'from';
+  const toPillActive    = versePickerVisible && versePickerPhase === 'to';
 
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
+
+      {/* Backdrop — closes verse picker when tapping outside */}
+      {versePickerVisible && (
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={() => setVersePickerVisible(false)}
+        />
+      )}
       <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
         <AppHeader title="" onBack={handleBack} />
       </View>
@@ -476,11 +330,15 @@ export default function HomeScreen() {
 
           {/* From verse pill */}
           <TouchableOpacity
-            style={[styles.versePill, !selectedChapter && styles.versePillDisabled]}
+            style={[
+              styles.versePill,
+              !selectedChapter  && styles.versePillDisabled,
+              fromPillActive    && styles.versePillActive,
+            ]}
             onPress={() => openVersePicker('from')}
             activeOpacity={0.7}
           >
-            <Text style={[styles.pillText, !fromVerse && styles.pillPlaceholder]}>
+            <Text style={[styles.pillText, fromPillActive && styles.pillTextActive, !fromVerse && styles.pillPlaceholder]}>
               {fromVerse > 0 ? String(fromVerse) : '–'}
             </Text>
           </TouchableOpacity>
@@ -491,15 +349,31 @@ export default function HomeScreen() {
 
           {/* To verse pill */}
           <TouchableOpacity
-            style={[styles.versePill, !selectedChapter && styles.versePillDisabled]}
+            style={[
+              styles.versePill,
+              !selectedChapter && styles.versePillDisabled,
+              toPillActive     && styles.versePillActive,
+            ]}
             onPress={() => openVersePicker('to')}
             activeOpacity={0.7}
           >
-            <Text style={[styles.pillText, !toVerse && styles.pillPlaceholder]}>
+            <Text style={[styles.pillText, toPillActive && styles.pillTextActive, !toVerse && styles.pillPlaceholder]}>
               {toVerse > 0 ? String(toVerse) : '–'}
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Inline verse grid popover */}
+        {versePickerVisible && selectedChapter && (
+          <VerseGridPopover
+            versesCount={versesCount}
+            fromVerse={fromVerse}
+            toVerse={toVerse}
+            phase={versePickerPhase}
+            onTap={handleGridTap}
+            onClose={() => setVersePickerVisible(false)}
+          />
+        )}
       </View>
 
       {/* Create playlist button — pinned to bottom */}
@@ -525,17 +399,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Animated.View>
       </View>
-
-      {/* Verse grid picker */}
-      <VerseGridPicker
-        visible={versePickerVisible}
-        versesCount={versesCount}
-        initialFrom={fromVerse > 0 ? fromVerse : 1}
-        initialTo={toVerse > 0 ? toVerse : versesCount}
-        initialPhase={versePickerPhase}
-        onDone={handleVerseDone}
-        onClose={() => setVersePickerVisible(false)}
-      />
 
       {/* Surah picker modal */}
       <Modal
@@ -612,7 +475,7 @@ const styles = StyleSheet.create({
 
   content: {
     flex: 1,
-    paddingHorizontal: 30,
+    paddingHorizontal: CONTENT_H_PAD,
     paddingTop: 36,
   },
 
@@ -665,6 +528,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  versePillActive: {
+    backgroundColor: APP_PRIMARY,
+    borderColor: APP_PRIMARY,
+  },
+
   versePillDisabled: {
     opacity: 0.4,
   },
@@ -673,6 +541,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: TEXT_BODY,
     textAlign: 'center',
+  },
+
+  pillTextActive: {
+    color: SURFACE,
   },
 
   pillPlaceholder: {
