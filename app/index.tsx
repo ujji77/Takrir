@@ -126,7 +126,7 @@ export default function AuthScreen() {
 
         {/* Sign in */}
         <TouchableOpacity
-          onPress={() => { setSigningIn(true); promptAsync(); }}
+          onPress={() => { setSigningIn(true); promptAsync({ preferEphemeralSession: false }); }}
           disabled={!request || signingIn}
           hitSlop={10}
         >

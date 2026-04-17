@@ -150,13 +150,38 @@ EXPO_PUBLIC_DEFAULT_RECITATION_ID=7
 
 ---
 
-## Issue: Access Blocked
+## Issue 1: Access Blocked ✅ Resolved
 
-We are receiving an **"Access Blocked"** error when the user taps "Sign in" and the OAuth2 authorization flow is triggered. The error occurs at the authorization step before the user can enter credentials.
+We were receiving an **"Access Blocked"** error when the OAuth2 authorization flow was triggered. This was resolved after the redirect URI was registered against the client IDs.
+
+---
+
+## Issue 2: CSRF Error after successful sign-in ✅ Superseded by Issue 3
+
+~~After the access blocked issue was resolved, sign-in reached the login form but failed on submission with a CSRF cookie error. We applied `preferEphemeralSession: false` as a fix. This issue was superseded by Issue 3 below.~~
+
+---
+
+## Issue 3: Client authentication failed (current blocker)
+
+After further testing, the token exchange step fails with:
+
+> **"Sign in failed: Client authentication failed (e.g., unknown client, no client authentication included, or unsupported authentication method)."**
+
+Full error from the OAuth server:
+
+> Client authentication failed (e.g., unknown client, no client authentication included, or unsupported authentication method). The authorization server MAY return an HTTP 401 (Unauthorized) status code to indicate which HTTP authentication schemes are supported. If the client attempted to authenticate via the "Authorization" request header field, the authorization server MUST respond with an HTTP 401 (Unauthorized) status code and include the "WWW-Authenticate" response header field matching the authentication scheme used by the client.
+
+### What is happening
+
+The prelive OAuth server is rejecting our client ID during the token exchange step. This means the client ID `ad079f69-a0b2-4c44-a162-6c178317cee0` is either:
+- Not registered on the prelive Hydra instance
+- Registered but not configured to allow PKCE / public client flows
+- Registered but the redirect URI `https://takrir-web.spatialuzair.workers.dev/auth/callback` is not whitelisted
 
 ### What we need help with
 
-1. Is the redirect URI `https://takrir-web.spatialuzair.workers.dev/auth/callback` registered against our client IDs in both pre-production and production?
-2. Are there any restrictions on the client IDs that would block a mobile app using PKCE flow?
-3. Is there anything specific about how `expo-auth-session` initiates the authorization request that may be incompatible with the Quran Foundation OAuth2 server?
-4. Are there any IP, origin, or platform restrictions applied to the pre-production client that differ from production?
+1. Please confirm that client ID `ad079f69-a0b2-4c44-a162-6c178317cee0` is registered on the prelive OAuth server (`https://prelive-oauth2.quran.foundation`)
+2. Please confirm the redirect URI `https://takrir-web.spatialuzair.workers.dev/auth/callback` is whitelisted for this client on prelive
+3. Please confirm the client is configured to allow public client / PKCE flows (no client secret — this is a mobile app)
+4. If the prelive client ID is different from what was provided, please share the correct one
