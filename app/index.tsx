@@ -25,8 +25,9 @@ import { APP_PRIMARY } from '../src/theme';
 import { useSettingsStore } from '../src/store/settings';
 import TakrirIcon from '../assets/takrir-icon-black.svg';
 
-const AUTH_URL = process.env.EXPO_PUBLIC_QURAN_AUTH_URL ?? 'https://oauth2.quran.foundation';
-const CLIENT_ID = process.env.EXPO_PUBLIC_QURAN_CLIENT_ID ?? '';
+const AUTH_URL       = process.env.EXPO_PUBLIC_QURAN_AUTH_URL       ?? 'https://oauth2.quran.foundation';
+const CLIENT_ID      = process.env.EXPO_PUBLIC_QURAN_CLIENT_ID      ?? '';
+const CLIENT_SECRET  = process.env.EXPO_PUBLIC_QURAN_CLIENT_SECRET  ?? '';
 
 const PRIVACY_URL = 'https://takrir-web.spatialuzair.workers.dev/privacy';
 const TERMS_URL  = 'https://takrir-web.spatialuzair.workers.dev/terms';
@@ -73,7 +74,13 @@ export default function AuthScreen() {
 
     if (response.type === 'success' && response.params.code && request?.codeVerifier) {
       exchangeCodeAsync(
-        { clientId: CLIENT_ID, code: response.params.code, redirectUri, codeVerifier: request.codeVerifier },
+        {
+          clientId: CLIENT_ID,
+          clientSecret: CLIENT_SECRET || undefined,
+          code: response.params.code,
+          redirectUri,
+          codeVerifier: request.codeVerifier,
+        },
         discovery,
       )
         .then((tokens) => {

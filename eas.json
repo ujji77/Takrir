@@ -15,6 +15,7 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_QURAN_CLIENT_ID": "ad079f69-a0b2-4c44-a162-6c178317cee0",
+        "EXPO_PUBLIC_QURAN_CLIENT_SECRET": "9mv_vqeGktgQlCad_eW9-VlZ3A",
         "EXPO_PUBLIC_QURAN_BASE_URL": "https://api.quran.com/api/v4",
         "EXPO_PUBLIC_QURAN_AUTH_URL": "https://prelive-oauth2.quran.foundation",
       }
