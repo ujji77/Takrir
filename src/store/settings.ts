@@ -14,7 +14,7 @@ export const QURAN_FONTS: QuranFont[] = ['text_uthmani', 'text_indopak'];
 export const PLAYBACK_RATES = [0.5, 1, 1.5, 2] as const;
 
 /** Curated reciter IDs pre-fetched so the user can switch live during playback. */
-export const SUPPORTED_RECITATION_IDS = [1, 3, 6, 7, 10, 12] as const;
+export const SUPPORTED_RECITATION_IDS = [1, 3, 7, 10] as const;
 
 export const PREF_CATEGORY = 'takrir';
 

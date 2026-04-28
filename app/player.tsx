@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   ScrollView,
   Modal,
@@ -10,6 +11,13 @@ import {
   Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+const bgImg = require('../assets/bg.png');
+const RECITER_IMAGES: Record<number, ReturnType<typeof require>> = {
+  1:  require('../assets/reciters/mujawwad.png'),
+  3:  require('../assets/reciters/sudais.png'),
+  7:  require('../assets/reciters/mishary.png'),
+  10: require('../assets/reciters/shuraym.png'),
+};
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -415,21 +423,42 @@ export default function PlayerScreen() {
           {activeDrawer === 'reciter' && (
             <>
               <Text style={styles.sheetTitle}>Reciter</Text>
-              <View style={styles.drawerChipRow}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.reciterScroll}
+                contentContainerStyle={styles.reciterScrollContent}
+              >
                 {recitations
                   ?.filter((r) => (SUPPORTED_RECITATION_IDS as readonly number[]).includes(r.id))
-                  .map((r) => (
-                    <TouchableOpacity
-                      key={r.id}
-                      style={[styles.drawerChip, recitationId === r.id && styles.drawerChipActive]}
-                      onPress={() => setRecitation(r.id)}
-                    >
-                      <Text style={styles.drawerChipText}>
-                        {r.reciter_name}{r.style ? ` · ${r.style}` : ''}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-              </View>
+                  .map((r) => {
+                    const isSelected = recitationId === r.id;
+                    return (
+                      <TouchableOpacity
+                        key={r.id}
+                        style={[styles.reciterCard, isSelected && styles.reciterCardSelected]}
+                        onPress={() => setRecitation(r.id)}
+                        activeOpacity={0.85}
+                      >
+                        <>
+                          <Image
+                            source={RECITER_IMAGES[r.id] ?? bgImg}
+                            style={{ position: 'absolute', top: 0, left: 0, width: 100, height: 120, borderRadius: 10 }}
+                            resizeMode="cover"
+                          />
+                          <LinearGradient
+                            colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.95)']}
+                            locations={[0, 0.5, 1]}
+                            style={[StyleSheet.absoluteFill, { borderRadius: 10 }]}
+                          />
+                        </>
+                        <Text style={styles.reciterCardNameSelected}>
+                          {r.reciter_name}{r.style ? `\n${r.style}` : ''}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+              </ScrollView>
             </>
           )}
         </View>
@@ -652,6 +681,40 @@ const styles = StyleSheet.create({
   drawerChipText: {
     fontSize: 15,
     color: TEXT_BODY,
+  },
+
+  // Reciter cards
+  reciterScroll: {
+    marginHorizontal: -16,
+  },
+  reciterScrollContent: {
+    paddingHorizontal: 16,
+    gap: 10,
+    paddingBottom: 8,
+  },
+  reciterCard: {
+    width: 100,
+    height: 120,
+    borderRadius: 10,
+    backgroundColor: '#EFEFEF',
+    padding: 10,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  reciterCardSelected: {
+    borderColor: APP_PRIMARY,
+  },
+  reciterCardName: {
+    fontSize: 10,
+    color: '#222',
+    lineHeight: 14,
+  },
+  reciterCardNameSelected: {
+    fontSize: 12,
+    color: '#fff',
+    lineHeight: 14,
   },
 
   // Playlist sheet
