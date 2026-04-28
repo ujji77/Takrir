@@ -28,6 +28,6 @@ export async function fetchAudioFiles(recitationId: number, chapterNumber: numbe
 }
 
 export async function fetchRecitations(): Promise<Recitation[]> {
-  const data = await apiFetch<RecitationsResponse>('/recitations');
+  const data = await apiFetch<RecitationsResponse>('/resources/recitations');
   return data.recitations;
 }

@@ -3,8 +3,8 @@ import { fetchAllPages } from './pagination';
 import type { VersesResponse, Verse } from '../types/api';
 
 const ALL_FIELDS = 'text_uthmani,text_indopak';
-// Saheeh International — default English translation
-export const TRANSLATION_ID = 131;
+// Saheeh International — ID 20 on api.quran.com/api/v4
+export const TRANSLATION_ID = 20;
 
 function fetchVersesPage(chapterNumber: number, page: number): Promise<VersesResponse> {
   return apiFetch<VersesResponse>(`/verses/by_chapter/${chapterNumber}`, {

@@ -17,6 +17,8 @@ import {
   EyeSlash,
   TextAa,
   Translate,
+  Subtitles,
+  Microphone,
   Queue,
   CaretLeft,
   SkipBack,
@@ -32,10 +34,13 @@ import {
   FONT_SCALES,
   QURAN_FONTS,
   PLAYBACK_RATES,
+  SUPPORTED_RECITATION_IDS,
   type FontScale,
   type QuranFont,
 } from '../src/store/settings';
 import { useChapters } from '../src/hooks/useChapters';
+import { useRecitations } from '../src/hooks/useRecitations';
+import { useVersesByChapter } from '../src/hooks/useVersesByChapter';
 
 import {
   APP_PRIMARY,
@@ -58,7 +63,7 @@ import {
 export default function PlayerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  type DrawerType = 'arabic' | 'fontSize' | 'font' | 'speed' | 'repeat';
+  type DrawerType = 'arabic' | 'fontSize' | 'font' | 'speed' | 'repeat' | 'translation' | 'reciter';
 
   const [playlistVisible, setPlaylistVisible] = useState(false);
   const [activeDrawer, setActiveDrawer] = useState<DrawerType | null>(null);
@@ -80,17 +85,20 @@ export default function PlayerScreen() {
   const setRepeatCount = usePlaylistStore((s) => s.setRepeatCount);
 
   const showArabic = useSettingsStore((s) => s.showArabic);
+  const showTranslation = useSettingsStore((s) => s.showTranslation);
   const quranFont = useSettingsStore((s) => s.quranFont);
   const fontScale = useSettingsStore((s) => s.fontScale);
   const recitationId = useSettingsStore((s) => s.recitationId);
   const playbackRate = useSettingsStore((s) => s.playbackRate);
   const setShowArabic = useSettingsStore((s) => s.setShowArabic);
+  const setShowTranslation = useSettingsStore((s) => s.setShowTranslation);
   const setQuranFont = useSettingsStore((s) => s.setQuranFont);
   const setFontScale = useSettingsStore((s) => s.setFontScale);
   const setPlaybackRate = useSettingsStore((s) => s.setPlaybackRate);
   const setRecitation = useSettingsStore((s) => s.setRecitation);
 
   const { data: chapters } = useChapters();
+  const { data: recitations } = useRecitations();
 
   // Waveform animation — 3-tier bar heights based on position
   const BAR_COUNT = 28;
@@ -155,6 +163,13 @@ export default function PlayerScreen() {
     () => chapters?.find((c) => c.id === chapterNumber),
     [chapters, chapterNumber],
   );
+
+  const { data: verses } = useVersesByChapter(chapterNumber);
+  const currentTranslation = useMemo(() => {
+    if (!currentItem || !verses) return null;
+    const verse = verses.find((v) => v.verse_key === currentItem.verseKey);
+    return verse?.translations?.[0]?.text?.replace(/<[^>]+>/g, '') ?? null;
+  }, [verses, currentItem]);
 
   const arabicFontSize = FONT_SCALE_SIZES[fontScale];
   const arabicText = currentItem
@@ -221,6 +236,9 @@ export default function PlayerScreen() {
               {arabicText}
             </Text>
           )}
+          {showTranslation && currentTranslation ? (
+            <Text style={styles.translationText}>{currentTranslation}</Text>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -277,6 +295,12 @@ export default function PlayerScreen() {
           <View style={styles.iconBarLeft}>
             <TouchableOpacity onPress={() => selectDrawer('arabic')} hitSlop={10} style={{ opacity: !showArabic && activeDrawer !== 'arabic' ? 0.45 : 1 }}>
               {showArabic ? <Eye size={24} color={APP_PRIMARY} /> : <EyeSlash size={24} color={APP_PRIMARY} />}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => selectDrawer('translation')} hitSlop={10} style={{ opacity: !showTranslation && activeDrawer !== 'translation' ? 0.45 : 1 }}>
+              <Subtitles size={24} color={APP_PRIMARY} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => selectDrawer('reciter')} hitSlop={10}>
+              <Microphone size={24} color={APP_PRIMARY} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => selectDrawer('fontSize')} hitSlop={10}>
               <TextAa size={24} color={APP_PRIMARY} />
@@ -372,6 +396,39 @@ export default function PlayerScreen() {
                 <TouchableOpacity style={[styles.drawerChip, !repeatPlaylist && styles.drawerChipActive]} onPress={() => { if (repeatPlaylist) toggleRepeatPlaylist(); }}>
                   <Text style={styles.drawerChipText}>Off</Text>
                 </TouchableOpacity>
+              </View>
+            </>
+          )}
+          {activeDrawer === 'translation' && (
+            <>
+              <Text style={styles.sheetTitle}>Translation</Text>
+              <View style={styles.drawerChipRow}>
+                <TouchableOpacity style={[styles.drawerChip, showTranslation && styles.drawerChipActive]} onPress={() => setShowTranslation(true)}>
+                  <Eye size={14} color={TEXT_BODY} /><Text style={styles.drawerChipText}>Show</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.drawerChip, !showTranslation && styles.drawerChipActive]} onPress={() => setShowTranslation(false)}>
+                  <EyeSlash size={14} color={TEXT_BODY} /><Text style={styles.drawerChipText}>Hide</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+          {activeDrawer === 'reciter' && (
+            <>
+              <Text style={styles.sheetTitle}>Reciter</Text>
+              <View style={styles.drawerChipRow}>
+                {recitations
+                  ?.filter((r) => (SUPPORTED_RECITATION_IDS as readonly number[]).includes(r.id))
+                  .map((r) => (
+                    <TouchableOpacity
+                      key={r.id}
+                      style={[styles.drawerChip, recitationId === r.id && styles.drawerChipActive]}
+                      onPress={() => setRecitation(r.id)}
+                    >
+                      <Text style={styles.drawerChipText}>
+                        {r.reciter_name}{r.style ? ` · ${r.style}` : ''}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
               </View>
             </>
           )}
@@ -556,7 +613,7 @@ const styles = StyleSheet.create({
   iconBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20,
+    gap: 14,
   },
   speedBadge: {
     paddingHorizontal: 4,
