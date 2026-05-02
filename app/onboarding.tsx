@@ -19,6 +19,8 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, RadialGradient as SvgRadial, Stop, Rect } from 'react-native-svg';
 import TakrirIcon from '../assets/takrir-icon-black.svg';
 import { useAuthStore } from '../src/store/auth';
 import {
@@ -773,6 +775,88 @@ const vis = StyleSheet.create({
   },
 });
 
+// ─── Background presets ───────────────────────────────────────────────────────
+
+type BgPreset = { id: string; label: string; swatch: string; containerBg: string };
+
+const BG_PRESETS: BgPreset[] = [
+  { id: 'sand',      label: 'Sand',      swatch: '#f5ece3', containerBg: '#f5ece3' },
+  { id: 'parchment', label: 'Parchment', swatch: '#f0ead8', containerBg: '#e4cebc' },
+  { id: 'dusk',      label: 'Dusk',      swatch: '#e2c49e', containerBg: '#f8ede2' },
+  { id: 'ochre',     label: 'Ochre',     swatch: '#e8ce68', containerBg: '#faf4e4' },
+  { id: 'dawn',      label: 'Dawn',      swatch: '#e8b8ac', containerBg: '#fde8de' },
+  { id: 'mist',      label: 'Mist',      swatch: '#c0b4b0', containerBg: '#d4c8bc' },
+];
+
+function BgOverlay({ id }: { id: string }) {
+  if (id === 'parchment') {
+    return (
+      <Svg style={StyleSheet.absoluteFill as any} height="100%" width="100%">
+        <Defs>
+          <SvgRadial id="bg_parchment" cx="50%" cy="35%" r="65%">
+            <Stop offset="0%" stopColor="#fdfaf3" />
+            <Stop offset="100%" stopColor="#e4cebc" />
+          </SvgRadial>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#bg_parchment)" />
+      </Svg>
+    );
+  }
+  if (id === 'dusk') {
+    return (
+      <LinearGradient
+        colors={['#f8ede2', '#dfc8a8']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+    );
+  }
+  if (id === 'ochre') {
+    return (
+      <>
+        <LinearGradient
+          colors={['rgba(245,200,64,0.22)', 'transparent']}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 0.1, y: 0.55 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(232,148,40,0.18)']}
+          start={{ x: 0.1, y: 0.45 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </>
+    );
+  }
+  if (id === 'dawn') {
+    return (
+      <LinearGradient
+        colors={['#fde8de', '#f5ddd5', '#edd0c8']}
+        locations={[0, 0.5, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+    );
+  }
+  if (id === 'mist') {
+    return (
+      <Svg style={StyleSheet.absoluteFill as any} height="100%" width="100%">
+        <Defs>
+          <SvgRadial id="bg_mist" cx="50%" cy="50%" r="70%">
+            <Stop offset="0%" stopColor="#f5f0ec" />
+            <Stop offset="100%" stopColor="#d4c8bc" />
+          </SvgRadial>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#bg_mist)" />
+      </Svg>
+    );
+  }
+  return null; // 'sand' — solid containerBg only
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
@@ -784,6 +868,36 @@ export default function OnboardingScreen() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const listRef = useRef<FlatList<Slide>>(null);
+
+  // Background picker
+  const [bgId, setBgId]             = useState('sand');
+  const [pickerOpen, setPickerOpen]  = useState(false);
+  const pickerOpenRef = useRef(false);
+  const pickerAnim    = useRef(new Animated.Value(0)).current;
+  const activeBg = BG_PRESETS.find((p) => p.id === bgId) ?? BG_PRESETS[0];
+
+  const togglePicker = useCallback(() => {
+    const opening = !pickerOpenRef.current;
+    pickerOpenRef.current = opening;
+    setPickerOpen(opening);
+    Animated.timing(pickerAnim, {
+      toValue: opening ? 1 : 0,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const selectBg = useCallback((id: string) => {
+    setBgId(id);
+    pickerOpenRef.current = false;
+    setPickerOpen(false);
+    Animated.timing(pickerAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
@@ -798,7 +912,6 @@ export default function OnboardingScreen() {
   const isLast  = currentIndex === SLIDES.length - 1;
   const topPad  = insets.top;
   const slideH  = SH - topPad - BOTTOM_BAR_H - insets.bottom;
-  // Bigger visual area — text sits lower, closer to the dots
   const visualH = slideH * 0.65;
   const textH   = slideH * 0.35;
 
@@ -830,6 +943,10 @@ export default function OnboardingScreen() {
   const onMomentumScrollEnd = useCallback((e: any) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / SW);
     setCurrentIndex(idx);
+    // Close picker on slide change
+    pickerOpenRef.current = false;
+    setPickerOpen(false);
+    pickerAnim.setValue(0);
   }, []);
 
   const renderItem = ({ item, index }: { item: Slide; index: number }) => {
@@ -848,7 +965,33 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: topPad }]}>
+    <View style={[styles.container, { paddingTop: topPad, backgroundColor: activeBg.containerBg }]}>
+      {/* Background gradient/shader overlay */}
+      <BgOverlay id={bgId} />
+
+      {/* Background picker — floating top-left */}
+      <View style={[styles.bgPickerWrap, { top: insets.top + 12 }]}>
+        <TouchableOpacity
+          style={[styles.bgPickerTrigger, { backgroundColor: activeBg.swatch }]}
+          onPress={togglePicker}
+          hitSlop={10}
+          activeOpacity={0.8}
+        />
+        <Animated.View
+          pointerEvents={pickerOpen ? 'auto' : 'none'}
+          style={[styles.bgPickerPanel, {
+            opacity: pickerAnim,
+            transform: [{ translateY: pickerAnim.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) }],
+          }]}
+        >
+          {BG_PRESETS.map((p) => (
+            <TouchableOpacity key={p.id} onPress={() => selectBg(p.id)} hitSlop={4} activeOpacity={0.75}>
+              <View style={[styles.bgSwatch, { backgroundColor: p.swatch }, p.id === bgId && styles.bgSwatchActive]} />
+            </TouchableOpacity>
+          ))}
+        </Animated.View>
+      </View>
+
       {isModal && (
         <TouchableOpacity
           style={[styles.closeBtn, { top: insets.top + 12 }]}
@@ -913,7 +1056,53 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5ece3',
+  },
+
+  // Background picker
+  bgPickerWrap: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 10,
+    alignItems: 'flex-start',
+  },
+  bgPickerTrigger: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0,0,0,0.14)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  bgPickerPanel: {
+    marginTop: 8,
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  bgSwatch: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+  },
+  bgSwatchActive: {
+    borderWidth: 2.5,
+    borderColor: '#555555',
   },
 
   closeBtn: {
