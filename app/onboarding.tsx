@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Dimensions,
   Image,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -81,104 +83,297 @@ const SLIDES: Slide[] = [
   },
 ];
 
-// ─── Visual components ────────────────────────────────────────────────────────
+type VisualProps = { isActive: boolean };
 
-function Visual1() {
+// ─── Visual 1: What is Takrir ─────────────────────────────────────────────────
+// Icon scales + fades in, then Arabic text slides up
+
+function Visual1({ isActive }: VisualProps) {
+  const iconAnim = useRef(new Animated.Value(0)).current;
+  const textAnim = useRef(new Animated.Value(0)).current;
+  const animRef  = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      animRef.current?.stop();
+      iconAnim.setValue(0);
+      textAnim.setValue(0);
+      return;
+    }
+    animRef.current = Animated.sequence([
+      Animated.timing(iconAnim, {
+        toValue: 1, duration: 520,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(textAnim, {
+        toValue: 1, duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]);
+    animRef.current.start();
+    return () => { animRef.current?.stop(); };
+  }, [isActive]);
+
   return (
     <View style={vis.center}>
-      <TakrirIcon width={72} height={96} />
+      <Animated.View style={{
+        opacity: iconAnim,
+        transform: [{ scale: iconAnim.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] }) }],
+      }}>
+        <TakrirIcon width={72} height={96} />
+      </Animated.View>
       <View style={{ height: 28 }} />
-      <Text style={vis.arabicWord}>تكرير</Text>
-      <Text style={vis.arabicSub}>Repetition</Text>
+      <Animated.View style={{
+        opacity: textAnim,
+        transform: [{ translateY: textAnim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
+        alignItems: 'center',
+      }}>
+        <Text style={vis.arabicWord}>تكرير</Text>
+        <Text style={vis.arabicSub}>Repetition</Text>
+      </Animated.View>
     </View>
   );
 }
 
-function Visual2() {
-  const SIZE = 200;
-  const rings = [
-    { size: SIZE, opacity: 0.1 },
-    { size: 150, opacity: 0.18 },
-    { size: 100, opacity: 0.28 },
+// ─── Visual 2: Repetition — ripple rings ──────────────────────────────────────
+// Concentric rings pulse outward from centre in an infinite ripple
+
+function Visual2({ isActive }: VisualProps) {
+  const SIZE       = 200;
+  const ringScales = useRef([
+    new Animated.Value(1),  // inner
+    new Animated.Value(1),  // middle
+    new Animated.Value(1),  // outer
+  ]).current;
+  const iconOpacity = useRef(new Animated.Value(0)).current;
+  const animRef     = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      animRef.current?.stop();
+      ringScales.forEach((s) => s.setValue(1));
+      iconOpacity.setValue(0);
+      return;
+    }
+
+    Animated.timing(iconOpacity, {
+      toValue: 1, duration: 400, useNativeDriver: true,
+    }).start();
+
+    const makeRingLoop = (scale: Animated.Value, delay: number) =>
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(scale, {
+              toValue: 1.1, duration: 800,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(scale, {
+              toValue: 1, duration: 800,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
+        ),
+      ]);
+
+    // Inner → middle → outer ripple (300 ms stagger)
+    animRef.current = Animated.parallel([
+      makeRingLoop(ringScales[0], 0),
+      makeRingLoop(ringScales[1], 300),
+      makeRingLoop(ringScales[2], 600),
+    ]);
+    animRef.current.start();
+    return () => { animRef.current?.stop(); };
+  }, [isActive]);
+
+  const RING_CONFIGS = [
+    { size: 100, opacity: 0.28, scale: ringScales[0] },
+    { size: 150, opacity: 0.18, scale: ringScales[1] },
+    { size: SIZE, opacity: 0.1,  scale: ringScales[2] },
   ];
+
   return (
     <View style={vis.center}>
       <View style={{ width: SIZE, height: SIZE }}>
-        {rings.map(({ size, opacity }, i) => {
+        {RING_CONFIGS.map(({ size, opacity, scale }, i) => {
           const offset = (SIZE - size) / 2;
           return (
-            <View
+            <Animated.View
               key={i}
               style={{
                 position: 'absolute',
-                top: offset,
-                left: offset,
-                width: size,
-                height: size,
+                top: offset, left: offset,
+                width: size, height: size,
                 borderRadius: size / 2,
                 borderWidth: 1.5,
                 borderColor: APP_PRIMARY,
                 opacity,
+                transform: [{ scale }],
               }}
             />
           );
         })}
-        <View style={{ position: 'absolute', top: (SIZE - 48) / 2, left: (SIZE - 36) / 2 }}>
+        <Animated.View style={{
+          position: 'absolute',
+          top: (SIZE - 48) / 2,
+          left: (SIZE - 36) / 2,
+          opacity: iconOpacity,
+        }}>
           <TakrirIcon width={36} height={48} />
-        </View>
+        </Animated.View>
       </View>
     </View>
   );
 }
 
-function Visual3() {
+// ─── Visual 3: Verse selector — sentence builder appears token by token ────────
+
+const SENTENCE_TOKENS = [
+  { type: 'label', text: 'I am learning surah' },
+  { type: 'surahPill', text: 'Al-Baqarah' },
+  { type: 'label', text: 'verses' },
+  { type: 'versePill', text: '2' },
+  { type: 'label', text: 'to' },
+  { type: 'versePillActive', text: '5' },
+] as const;
+
+function Visual3({ isActive }: VisualProps) {
+  const anims   = useRef(SENTENCE_TOKENS.map(() => new Animated.Value(0))).current;
+  const animRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      animRef.current?.stop();
+      anims.forEach((a) => a.setValue(0));
+      return;
+    }
+    animRef.current = Animated.stagger(
+      90,
+      anims.map((a) =>
+        Animated.timing(a, {
+          toValue: 1, duration: 340,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ),
+    );
+    animRef.current.start();
+    return () => { animRef.current?.stop(); };
+  }, [isActive]);
+
   return (
     <View style={vis.center}>
       <View style={vis.sentenceWrap}>
-        <Text style={vis.sentenceLabel}>I am learning surah</Text>
-        <View style={vis.surahPill}>
-          <Text style={vis.pillText}>Al-Baqarah</Text>
-        </View>
-        <Text style={vis.sentenceLabel}>verses</Text>
-        <View style={vis.versePill}>
-          <Text style={vis.pillText}>2</Text>
-        </View>
-        <Text style={vis.sentenceLabel}>to</Text>
-        <View style={[vis.versePill, { backgroundColor: APP_PRIMARY, borderColor: APP_PRIMARY }]}>
-          <Text style={[vis.pillText, { color: SURFACE }]}>5</Text>
-        </View>
+        {SENTENCE_TOKENS.map((token, i) => {
+          const anim = anims[i];
+          const animated = {
+            opacity: anim,
+            transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
+          };
+          if (token.type === 'label') {
+            return (
+              <Animated.Text key={i} style={[vis.sentenceLabel, animated]}>
+                {token.text}
+              </Animated.Text>
+            );
+          }
+          if (token.type === 'surahPill') {
+            return (
+              <Animated.View key={i} style={[vis.surahPill, animated]}>
+                <Text style={vis.pillText}>{token.text}</Text>
+              </Animated.View>
+            );
+          }
+          if (token.type === 'versePillActive') {
+            return (
+              <Animated.View key={i} style={[vis.versePill, { backgroundColor: APP_PRIMARY, borderColor: APP_PRIMARY }, animated]}>
+                <Text style={[vis.pillText, { color: SURFACE }]}>{token.text}</Text>
+              </Animated.View>
+            );
+          }
+          return (
+            <Animated.View key={i} style={[vis.versePill, animated]}>
+              <Text style={vis.pillText}>{token.text}</Text>
+            </Animated.View>
+          );
+        })}
       </View>
     </View>
   );
 }
 
+// ─── Visual 4: Playlist — rows slide in from right, staggered ─────────────────
+
 const PLAYLIST_ITEMS = [
-  { surah: 'Al-Fatiha', range: 'Verses 1 – 7', active: true },
-  { surah: 'Al-Baqarah', range: 'Verse 255', active: false },
-  { surah: 'Al-Ikhlas', range: 'Verses 1 – 4', active: false },
+  { surah: 'Al-Fatiha',   range: 'Verses 1 – 7', active: true  },
+  { surah: 'Al-Baqarah',  range: 'Verse 255',     active: false },
+  { surah: 'Al-Ikhlas',   range: 'Verses 1 – 4',  active: false },
 ];
 
-function Visual4() {
+function Visual4({ isActive }: VisualProps) {
+  const rowAnims = useRef(PLAYLIST_ITEMS.map(() => new Animated.Value(0))).current;
+  const animRef  = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      animRef.current?.stop();
+      rowAnims.forEach((a) => a.setValue(0));
+      return;
+    }
+    animRef.current = Animated.stagger(
+      150,
+      rowAnims.map((a) =>
+        Animated.timing(a, {
+          toValue: 1, duration: 420,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ),
+    );
+    animRef.current.start();
+    return () => { animRef.current?.stop(); };
+  }, [isActive]);
+
   return (
     <View style={vis.center}>
       <View style={vis.playlistWrap}>
-        {PLAYLIST_ITEMS.map((item, i) => (
-          <View key={i} style={[vis.playlistRow, item.active && vis.playlistRowActive]}>
-            <View style={{ flex: 1 }}>
-              <Text style={[vis.playlistSurah, item.active && { color: TEXT_PRIMARY }]}>
-                {item.surah}
-              </Text>
-              <Text style={vis.playlistRange}>{item.range}</Text>
-            </View>
-            <View style={[vis.playCircle, item.active && { backgroundColor: APP_PRIMARY }]}>
-              <Text style={[vis.playArrow, item.active && { color: SURFACE }]}>{'▶'}</Text>
-            </View>
-          </View>
-        ))}
+        {PLAYLIST_ITEMS.map((item, i) => {
+          const anim = rowAnims[i];
+          return (
+            <Animated.View
+              key={i}
+              style={[
+                vis.playlistRow,
+                item.active && vis.playlistRowActive,
+                {
+                  opacity: anim,
+                  transform: [{ translateX: anim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
+                },
+              ]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[vis.playlistSurah, item.active && { color: TEXT_PRIMARY }]}>
+                  {item.surah}
+                </Text>
+                <Text style={vis.playlistRange}>{item.range}</Text>
+              </View>
+              <View style={[vis.playCircle, item.active && { backgroundColor: APP_PRIMARY }]}>
+                <Text style={[vis.playArrow, item.active && { color: SURFACE }]}>{'▶'}</Text>
+              </View>
+            </Animated.View>
+          );
+        })}
       </View>
     </View>
   );
 }
+
+// ─── Visual 5: Reciters + live waveform equaliser ─────────────────────────────
 
 const RECITER_IMAGES = [
   { img: require('../assets/reciters/mujawwad.png'), name: 'Abdul Basit', active: false },
@@ -187,32 +382,109 @@ const RECITER_IMAGES = [
   { img: require('../assets/reciters/shuraym.png'),  name: 'Al-Shuraym',  active: false },
 ];
 
-const WAVE_H = [10, 22, 14, 30, 18, 34, 20, 12, 28, 24, 16, 32, 18, 12, 26, 20, 24, 14, 22, 16];
+const WAVE_H   = [10, 22, 14, 30, 18, 34, 20, 12, 28, 24, 16, 32, 18, 12, 26, 20, 24, 14, 22, 16];
+const PHASES   = 4;
+const PHASE_MS = 200; // ms between phase starts
 
-function Visual5() {
+function Visual5({ isActive }: VisualProps) {
+  const avatarAnims = useRef(RECITER_IMAGES.map(() => new Animated.Value(0))).current;
+  // 4 phase values drive the waveform bars in groups
+  const phaseAnims  = useRef(Array.from({ length: PHASES }, () => new Animated.Value(0))).current;
+  const animRef     = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      animRef.current?.stop();
+      avatarAnims.forEach((a) => a.setValue(0));
+      phaseAnims.forEach((a) => a.setValue(0));
+      return;
+    }
+
+    const avatarEntrance = Animated.stagger(
+      100,
+      avatarAnims.map((a) =>
+        Animated.timing(a, {
+          toValue: 1, duration: 380,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ),
+    );
+
+    // Waveform: each phase loops with a staggered start delay
+    const makePhaseLoop = (anim: Animated.Value, delay: number) =>
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(anim, {
+              toValue: 1, duration: 420,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(anim, {
+              toValue: 0.15, duration: 420,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
+        ),
+      ]);
+
+    const waveform = Animated.parallel(
+      phaseAnims.map((a, i) => makePhaseLoop(a, i * PHASE_MS)),
+    );
+
+    animRef.current = Animated.parallel([avatarEntrance, waveform]);
+    animRef.current.start();
+    return () => { animRef.current?.stop(); };
+  }, [isActive]);
+
   return (
     <View style={vis.center}>
       <View style={vis.reciterGrid}>
-        {RECITER_IMAGES.map((r, i) => (
-          <View key={i} style={vis.reciterItem}>
-            <View style={[vis.reciterAvatar, r.active && vis.reciterAvatarActive]}>
-              <Image source={r.img} style={vis.reciterImg} />
-            </View>
-            <Text style={[vis.reciterName, r.active && { color: TEXT_PRIMARY, fontWeight: '600' }]}>
-              {r.name}
-            </Text>
-          </View>
-        ))}
+        {RECITER_IMAGES.map((r, i) => {
+          const anim = avatarAnims[i];
+          return (
+            <Animated.View
+              key={i}
+              style={[
+                vis.reciterItem,
+                {
+                  opacity: anim,
+                  transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.78, 1] }) }],
+                },
+              ]}
+            >
+              <View style={[vis.reciterAvatar, r.active && vis.reciterAvatarActive]}>
+                <Image source={r.img} style={vis.reciterImg} />
+              </View>
+              <Text style={[vis.reciterName, r.active && { color: TEXT_PRIMARY, fontWeight: '600' }]}>
+                {r.name}
+              </Text>
+            </Animated.View>
+          );
+        })}
       </View>
       <View style={{ height: 28 }} />
       <View style={vis.waveformRow}>
         {WAVE_H.map((h, i) => (
-          <View
+          <Animated.View
             key={i}
             style={[
               vis.wavebar,
               { height: h },
-              i < 9 ? { backgroundColor: APP_PRIMARY } : { backgroundColor: `${APP_PRIMARY}40` },
+              i < 9
+                ? { backgroundColor: APP_PRIMARY }
+                : { backgroundColor: `${APP_PRIMARY}40` },
+              {
+                transform: [{
+                  scaleY: phaseAnims[i % PHASES].interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.2, 1],
+                  }),
+                }],
+              },
             ]}
           />
         ))}
@@ -221,10 +493,61 @@ function Visual5() {
   );
 }
 
-function Visual6() {
+// ─── Visual 6: Begin — icon breathes gently ───────────────────────────────────
+
+function Visual6({ isActive }: VisualProps) {
+  const enterAnim = useRef(new Animated.Value(0)).current;
+  const breathAnim = useRef(new Animated.Value(1)).current;
+  const animRef   = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      animRef.current?.stop();
+      enterAnim.setValue(0);
+      breathAnim.setValue(1);
+      return;
+    }
+
+    const entrance = Animated.timing(enterAnim, {
+      toValue: 1, duration: 600,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+
+    const breathe = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breathAnim, {
+          toValue: 1.045, duration: 1250,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(breathAnim, {
+          toValue: 1, duration: 1250,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    animRef.current = Animated.sequence([entrance, breathe]);
+    animRef.current.start();
+    return () => { animRef.current?.stop(); };
+  }, [isActive]);
+
   return (
     <View style={vis.center}>
-      <TakrirIcon width={88} height={117} />
+      <Animated.View style={{
+        opacity: enterAnim,
+        transform: [
+          { scale: Animated.multiply(
+              enterAnim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] }),
+              breathAnim,
+            )
+          },
+        ],
+      }}>
+        <TakrirIcon width={88} height={117} />
+      </Animated.View>
     </View>
   );
 }
@@ -244,6 +567,7 @@ const vis = StyleSheet.create({
     fontSize: 52,
     color: '#111111',
     fontWeight: '300',
+    textAlign: 'center',
   },
   arabicSub: {
     fontSize: 13,
@@ -251,6 +575,7 @@ const vis = StyleSheet.create({
     letterSpacing: 3,
     textTransform: 'uppercase',
     marginTop: 10,
+    textAlign: 'center',
   },
 
   // Sentence builder mock (slide 3)
@@ -385,11 +710,11 @@ const vis = StyleSheet.create({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
-  const router   = useRouter();
-  const insets   = useSafeAreaInsets();
+  const router    = useRouter();
+  const insets    = useSafeAreaInsets();
   const { modal } = useLocalSearchParams<{ modal?: string }>();
-  const isModal  = modal === 'true';
-  const setGuest = useAuthStore((s) => s.setGuest);
+  const isModal   = modal === 'true';
+  const setGuest  = useAuthStore((s) => s.setGuest);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const listRef = useRef<FlatList<Slide>>(null);
@@ -445,7 +770,7 @@ export default function OnboardingScreen() {
     return (
       <View style={{ width: SW, height: slideH }}>
         <View style={{ height: visualH }}>
-          <VisualComp />
+          <VisualComp isActive={currentIndex === index} />
         </View>
         <View style={{ height: textH, paddingHorizontal: 24, paddingTop: 20 }}>
           <Text style={[styles.headline, f700]}>{item.headline}</Text>
@@ -558,7 +883,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 
-  // Bottom bar
   bottomBar: {
     justifyContent: 'center',
     paddingHorizontal: 24,
@@ -599,7 +923,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 
-  // Final slide CTAs
   finalCtaWrap: {
     alignItems: 'center',
   },
@@ -615,7 +938,6 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 
-  // Modal done button
   doneBtn: {
     alignSelf: 'center',
     paddingHorizontal: 48,
