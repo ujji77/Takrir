@@ -20,10 +20,12 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '../src/store/auth';
 import { APP_PRIMARY } from '../src/theme';
 import { useSettingsStore } from '../src/store/settings';
 import TakrirIcon from '../assets/takrir-icon-black.svg';
+import { ONBOARDING_KEY } from './onboarding';
 
 const AUTH_URL       = process.env.EXPO_PUBLIC_QURAN_AUTH_URL       ?? 'https://oauth2.quran.foundation';
 const CLIENT_ID      = process.env.EXPO_PUBLIC_QURAN_CLIENT_ID      ?? '';
@@ -48,6 +50,12 @@ export default function AuthScreen() {
   const setToken = useAuthStore((s) => s.setToken);
   const setGuest = useAuthStore((s) => s.setGuest);
   const [signingIn, setSigningIn] = useState(false);
+
+  useEffect(() => {
+    SecureStore.getItemAsync(ONBOARDING_KEY).then((val) => {
+      if (!val) router.replace('/onboarding');
+    });
+  }, []);
 
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,

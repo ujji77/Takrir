@@ -59,6 +59,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' } }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
             <Stack.Screen name="home" options={{ headerShown: false }} />
             <Stack.Screen name="playlist" options={{ headerShown: false }} />
             <Stack.Screen name="player" options={{ headerShown: false }} />
