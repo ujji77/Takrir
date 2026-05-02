@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthRequest, exchangeCodeAsync } from 'expo-auth-session';
+import { useAuthRequest } from 'expo-auth-session';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -73,18 +73,24 @@ export default function AuthScreen() {
     }
 
     if (response.type === 'success' && response.params.code && request?.codeVerifier) {
-      exchangeCodeAsync(
-        {
-          clientId: CLIENT_ID,
-          clientSecret: CLIENT_SECRET || undefined,
-          code: response.params.code,
-          redirectUri,
-          codeVerifier: request.codeVerifier,
-        },
-        discovery,
-      )
+      const body = new URLSearchParams({
+        grant_type:    'authorization_code',
+        code:          response.params.code,
+        redirect_uri:  redirectUri,
+        client_id:     CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code_verifier: request.codeVerifier,
+      });
+
+      fetch(discovery.tokenEndpoint, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body:    body.toString(),
+      })
+        .then((res) => res.json())
         .then((tokens) => {
-          setToken(tokens.accessToken);
+          if (!tokens.access_token) throw new Error(tokens.error_description ?? tokens.error ?? 'No access token');
+          setToken(tokens.access_token);
           useSettingsStore.getState().loadCloudSettings().catch(() => null);
           router.replace('/home');
         })
