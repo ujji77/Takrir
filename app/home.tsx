@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useChapters } from '../src/hooks/useChapters';
+import { useRecentPlaylistsStore } from '../src/store/recentPlaylists';
 import AppHeader from '../src/components/AppHeader';
 import type { Chapter } from '../src/types/api';
 import {
@@ -214,6 +215,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const { data: chapters, isLoading, isError: chaptersError } = useChapters();
 
+  const recentItems = useRecentPlaylistsStore((s) => s.items);
+
   const [selectedChapter,    setSelectedChapter]    = useState<Chapter | null>(null);
   const [fromVerse,          setFromVerse]          = useState(0);
   const [toVerse,            setToVerse]            = useState(0);
@@ -279,6 +282,12 @@ export default function HomeScreen() {
 
   const handleAddDetail = () => {
     if (!selectedChapter || fromVerse < 1 || toVerse < fromVerse) return;
+    useRecentPlaylistsStore.getState().add({
+      chapterName: selectedChapter.name_simple,
+      chapterNumber: selectedChapter.id,
+      fromVerse,
+      toVerse,
+    });
     router.push({ pathname: '/playlist', params: { chapter: selectedChapter.id, from: fromVerse, to: toVerse } });
   };
 
@@ -387,6 +396,40 @@ export default function HomeScreen() {
           />
         )}
       </View>
+
+      {/* Recent playlists — quick access pills */}
+      {recentItems.length > 0 && (
+        <Text style={styles.recentTitle}>Recent lessons</Text>
+      )}
+      {recentItems.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.recentStrip}
+          contentContainerStyle={styles.recentStripContent}
+        >
+          {recentItems.map((p, i) => {
+            const range = p.fromVerse === p.toVerse ? String(p.fromVerse) : `${p.fromVerse}:${p.toVerse}`;
+            return (
+              <TouchableOpacity
+                key={i}
+                style={styles.recentPill}
+                activeOpacity={0.7}
+                onPress={() =>
+                  router.push({
+                    pathname: '/playlist',
+                    params: { chapter: p.chapterNumber, from: p.fromVerse, to: p.toVerse },
+                  })
+                }
+              >
+                <Text style={styles.recentPillText} numberOfLines={1}>
+                  {p.chapterName} {range}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
 
       {/* Create playlist button — pinned to bottom */}
       <View style={styles.ctaWrap}>
@@ -561,6 +604,39 @@ const styles = StyleSheet.create({
 
   pillPlaceholder: {
     color: TEXT_PLACEHOLDER,
+  },
+
+  // Recent playlists strip
+  recentTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: TEXT_SECONDARY,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    paddingHorizontal: CONTENT_H_PAD,
+    marginBottom: 8,
+  },
+  recentStrip: {
+    maxHeight: 48,
+    marginBottom: 10,
+  },
+  recentStripContent: {
+    paddingHorizontal: CONTENT_H_PAD,
+    gap: 8,
+    alignItems: 'center',
+  },
+  recentPill: {
+    backgroundColor: SURFACE_FROSTED,
+    borderWidth: 0.5,
+    borderColor: `${APP_PRIMARY}60`,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  recentPillText: {
+    fontSize: 13,
+    color: TEXT_BODY,
+    fontWeight: '500',
   },
 
   // CTA button

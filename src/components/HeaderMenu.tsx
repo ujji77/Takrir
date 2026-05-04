@@ -45,6 +45,17 @@ export default function HeaderMenu() {
       >
         <Pressable style={styles.backdrop} onPress={() => setVisible(false)}>
           <View style={styles.menu} onStartShouldSetResponder={() => true}>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => { setVisible(false); router.push({ pathname: '/onboarding', params: { modal: 'true' } }); }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.menuItemText}>What is Takrir</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
             {isLoggedIn && (
               <>
                 <TouchableOpacity style={styles.menuItem} onPress={handleLogout} activeOpacity={0.7}>
