@@ -433,15 +433,15 @@ const INITIAL_RECITER = 2; // Mishary
 const PHASES          = 4;
 const CYCLE_MS        = 2600;
 
-// Visual5c — tilted fan card dimensions
-const TILT_CARD_W = SW - 48;
-const TILT_CARD_H = 140;
-const TILT_STEP   = 76; // vertical offset between cards
-const CARD_TILTS  = [
-  { rotate: '-5deg',    xOffset: -4 },
-  { rotate: '-1.5deg',  xOffset:  2 },
-  { rotate: '2deg',     xOffset: -2 },
-  { rotate: '5.5deg',   xOffset:  4 },
+// Visual5c — horizontal fanned card layout
+const TILT_CARD_W = 96;
+const TILT_CARD_H = 128;
+// Per-card: horizontal offset from center, vertical jitter, rotation
+const CARD_OFFSETS = [
+  { x: -118, y:  6, rotate: '-7deg'   },
+  { x:  -39, y: -5, rotate: '-2.5deg' },
+  { x:   39, y:  5, rotate: '3deg'    },
+  { x:  118, y: -6, rotate: '6.5deg'  },
 ] as const;
 
 function Visual5({ isActive }: VisualProps) {
@@ -668,10 +668,13 @@ function Visual5b({ isActive }: VisualProps) {
   );
 }
 
-// ─── Visual 5c: Reciters — fanned tilted cards (Nusuk-style) ─────────────────
+// ─── Visual 5c: Reciters — horizontal fanned tilted cards + waveform ─────────
 
 function Visual5c({ isActive }: VisualProps) {
   const avatarAnims = useRef(RECITER_IMAGES.map(() => new Animated.Value(0))).current;
+  const waveOpacity = useRef(new Animated.Value(1)).current;
+  const phaseAnims  = useRef(Array.from({ length: PHASES }, () => new Animated.Value(0))).current;
+  const waveAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const cycleRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const activeRef   = useRef(INITIAL_RECITER);
 
@@ -680,19 +683,34 @@ function Visual5c({ isActive }: VisualProps) {
   useEffect(() => {
     if (!isActive) {
       if (cycleRef.current) clearInterval(cycleRef.current);
+      waveAnimRef.current?.stop();
       avatarAnims.forEach((a) => a.setValue(0));
+      phaseAnims.forEach((a) => a.setValue(0));
+      waveOpacity.setValue(1);
       activeRef.current = INITIAL_RECITER;
       setActiveReciter(INITIAL_RECITER);
       return;
     }
 
-    const entrance = Animated.stagger(130, avatarAnims.map((a, i) =>
+    const entrance = Animated.stagger(120, avatarAnims.map((a, i) =>
       Animated.timing(a, {
         toValue: i === INITIAL_RECITER ? 1.0 : 0.6,
-        duration: 440, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+        duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true,
       })
     ));
     entrance.start();
+
+    const makePhaseLoop = (anim: Animated.Value, delay: number) =>
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.loop(Animated.sequence([
+          Animated.timing(anim, { toValue: 1,    duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.15, duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        ])),
+      ]);
+
+    waveAnimRef.current = Animated.parallel(phaseAnims.map((a, i) => makePhaseLoop(a, i * 200)));
+    waveAnimRef.current.start();
 
     cycleRef.current = setInterval(() => {
       const current = activeRef.current;
@@ -703,39 +721,46 @@ function Visual5c({ isActive }: VisualProps) {
         Animated.timing(avatarAnims[next],    { toValue: 1.0, duration: 420, useNativeDriver: true }),
       ]).start();
 
-      setActiveReciter(next);
-      activeRef.current = next;
+      Animated.timing(waveOpacity, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+        setActiveReciter(next);
+        activeRef.current = next;
+        Animated.timing(waveOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
+      });
     }, CYCLE_MS);
 
     return () => {
       if (cycleRef.current) clearInterval(cycleRef.current);
       entrance.stop();
+      waveAnimRef.current?.stop();
     };
   }, [isActive]);
 
-  // Render active card last so it's on top (painter's order = z-order)
+  // Render active card last so it appears on top (painter's z-order)
   const renderOrder = useMemo(() => {
     const inactive = [0, 1, 2, 3].filter((i) => i !== activeReciter);
     return [...inactive, activeReciter];
   }, [activeReciter]);
 
-  const stackH = TILT_CARD_H + (RECITER_IMAGES.length - 1) * TILT_STEP;
+  const waveH      = WAVEFORMS[activeReciter];
+  const FAN_H      = TILT_CARD_H + 20; // container height with y-jitter headroom
+  const cardCenterX = (SW - TILT_CARD_W) / 2; // left edge of a perfectly centered card
 
   return (
     <View style={vis.center}>
-      <View style={{ width: TILT_CARD_W + 24, height: stackH }}>
+      {/* Horizontal fan: all 4 cards side-by-side with x offsets + tilt */}
+      <View style={{ width: SW, height: FAN_H }}>
         {renderOrder.map((i) => {
           const anim = avatarAnims[i];
-          const { rotate, xOffset } = CARD_TILTS[i];
+          const { x, y, rotate } = CARD_OFFSETS[i];
           const isActiveR = i === activeReciter;
           return (
             <Animated.View key={i} style={[
               vis.tiltCard,
               {
-                top:         i * TILT_STEP,
-                left:        12 + xOffset,
-                borderColor: isActiveR ? APP_PRIMARY : 'rgba(255,255,255,0.18)',
-                shadowOpacity: isActiveR ? 0.35 : 0.08,
+                left:          cardCenterX + x,
+                top:           10 + y,
+                borderColor:   isActiveR ? APP_PRIMARY : 'rgba(255,255,255,0.15)',
+                shadowOpacity: isActiveR ? 0.4 : 0.06,
                 transform: [
                   { rotate },
                   { scale: anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.78, 0.92, 1.0] }) },
@@ -745,7 +770,7 @@ function Visual5c({ isActive }: VisualProps) {
             ]}>
               <Image source={RECITER_IMAGES[i].img} style={vis.tiltCardImg} />
               <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.6)']}
+                colors={['transparent', 'rgba(0,0,0,0.62)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={vis.tiltCardOverlay}
@@ -756,6 +781,20 @@ function Visual5c({ isActive }: VisualProps) {
           );
         })}
       </View>
+
+      <View style={{ height: 28 }} />
+
+      {/* Waveform — same crossfade as Visual5 */}
+      <Animated.View style={[vis.waveformRow, { opacity: waveOpacity }]}>
+        {waveH.map((h, i) => (
+          <Animated.View key={i} style={[
+            vis.wavebar,
+            { height: h },
+            i < 9 ? { backgroundColor: APP_PRIMARY } : { backgroundColor: `${APP_PRIMARY}40` },
+            { transform: [{ scaleY: phaseAnims[i % PHASES].interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] },
+          ]} />
+        ))}
+      </Animated.View>
     </View>
   );
 }
