@@ -8,11 +8,13 @@ import { BlurView } from 'expo-blur';
 import TrackPlayer, { Capability } from 'react-native-track-player';
 import { PlaybackService } from '../src/audio/PlaybackService';
 import { useSettingsStore } from '../src/store/settings';
+import { useRecentPlaylistsStore } from '../src/store/recentPlaylists';
 
 const queryClient = new QueryClient();
 const bgImg = require('../assets/bg.png');
 
 useSettingsStore.getState().loadPersistedSettings();
+useRecentPlaylistsStore.getState().load();
 TrackPlayer.registerPlaybackService(() => PlaybackService);
 
 export default function RootLayout() {

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -81,6 +81,18 @@ const SLIDES: Slide[] = [
   },
   {
     id: '6',
+    headline: 'Find your reciter.',
+    body: 'Each voice brings its own depth to the words of Allah.',
+    isFinal: false,
+  },
+  {
+    id: '7',
+    headline: 'Every voice tells a story.',
+    body: 'Let your heart guide you to the recitation that moves you.',
+    isFinal: false,
+  },
+  {
+    id: '8',
     headline: 'Begin your recitation.',
     body: '',
     isFinal: true,
@@ -421,6 +433,17 @@ const INITIAL_RECITER = 2; // Mishary
 const PHASES          = 4;
 const CYCLE_MS        = 2600;
 
+// Visual5c — tilted fan card dimensions
+const TILT_CARD_W = SW - 48;
+const TILT_CARD_H = 140;
+const TILT_STEP   = 76; // vertical offset between cards
+const CARD_TILTS  = [
+  { rotate: '-5deg',    xOffset: -4 },
+  { rotate: '-1.5deg',  xOffset:  2 },
+  { rotate: '2deg',     xOffset: -2 },
+  { rotate: '5.5deg',   xOffset:  4 },
+] as const;
+
 function Visual5({ isActive }: VisualProps) {
   // 0 = invisible, 0.6 = entered+inactive, 1.0 = entered+active
   const avatarAnims  = useRef(RECITER_IMAGES.map((_, i) => new Animated.Value(0))).current;
@@ -530,6 +553,213 @@ function Visual5({ isActive }: VisualProps) {
   );
 }
 
+// ─── Visual 5b: Reciters — square card grid + waveform ────────────────────────
+
+function Visual5b({ isActive }: VisualProps) {
+  const avatarAnims = useRef(RECITER_IMAGES.map(() => new Animated.Value(0))).current;
+  const waveOpacity = useRef(new Animated.Value(1)).current;
+  const phaseAnims  = useRef(Array.from({ length: PHASES }, () => new Animated.Value(0))).current;
+  const waveAnimRef = useRef<Animated.CompositeAnimation | null>(null);
+  const cycleRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const activeRef   = useRef(INITIAL_RECITER);
+
+  const [activeReciter, setActiveReciter] = useState(INITIAL_RECITER);
+
+  useEffect(() => {
+    if (!isActive) {
+      if (cycleRef.current) clearInterval(cycleRef.current);
+      waveAnimRef.current?.stop();
+      avatarAnims.forEach((a) => a.setValue(0));
+      phaseAnims.forEach((a) => a.setValue(0));
+      waveOpacity.setValue(1);
+      activeRef.current = INITIAL_RECITER;
+      setActiveReciter(INITIAL_RECITER);
+      return;
+    }
+
+    const entrance = Animated.stagger(100, avatarAnims.map((a, i) =>
+      Animated.timing(a, {
+        toValue: i === INITIAL_RECITER ? 1.0 : 0.6,
+        duration: 380, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+      })
+    ));
+    entrance.start();
+
+    const makePhaseLoop = (anim: Animated.Value, delay: number) =>
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.loop(Animated.sequence([
+          Animated.timing(anim, { toValue: 1,    duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.15, duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        ])),
+      ]);
+
+    waveAnimRef.current = Animated.parallel(phaseAnims.map((a, i) => makePhaseLoop(a, i * 200)));
+    waveAnimRef.current.start();
+
+    cycleRef.current = setInterval(() => {
+      const current = activeRef.current;
+      const next    = (current + 1) % RECITER_IMAGES.length;
+
+      Animated.parallel([
+        Animated.timing(avatarAnims[current], { toValue: 0.6, duration: 400, useNativeDriver: true }),
+        Animated.timing(avatarAnims[next],    { toValue: 1.0, duration: 400, useNativeDriver: true }),
+      ]).start();
+
+      Animated.timing(waveOpacity, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+        setActiveReciter(next);
+        activeRef.current = next;
+        Animated.timing(waveOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
+      });
+    }, CYCLE_MS);
+
+    return () => {
+      if (cycleRef.current) clearInterval(cycleRef.current);
+      entrance.stop();
+      waveAnimRef.current?.stop();
+    };
+  }, [isActive]);
+
+  const cardW = (SW - 64 - 10) / 2;
+  const cardH = cardW * 0.68;
+  const waveH = WAVEFORMS[activeReciter];
+
+  return (
+    <View style={vis.center}>
+      <View style={vis.cardGrid}>
+        {RECITER_IMAGES.map((r, i) => {
+          const anim = avatarAnims[i];
+          const isActiveR = i === activeReciter;
+          return (
+            <Animated.View key={i} style={[
+              vis.reciterCard,
+              { width: cardW, height: cardH },
+              isActiveR && vis.reciterCardActive,
+              {
+                opacity:   anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 0.5, 1] }),
+                transform: [{ scale: anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.78, 0.9, 1.0] }) }],
+              },
+            ]}>
+              <Image source={r.img} style={vis.reciterCardImg} />
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.62)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={vis.cardOverlay}
+              >
+                <Text style={vis.cardOverlayName}>{r.name}</Text>
+              </LinearGradient>
+            </Animated.View>
+          );
+        })}
+      </View>
+      <View style={{ height: 22 }} />
+      <Animated.View style={[vis.waveformRow, { opacity: waveOpacity }]}>
+        {waveH.map((h, i) => (
+          <Animated.View key={i} style={[
+            vis.wavebar,
+            { height: h },
+            i < 9 ? { backgroundColor: APP_PRIMARY } : { backgroundColor: `${APP_PRIMARY}40` },
+            { transform: [{ scaleY: phaseAnims[i % PHASES].interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] },
+          ]} />
+        ))}
+      </Animated.View>
+    </View>
+  );
+}
+
+// ─── Visual 5c: Reciters — fanned tilted cards (Nusuk-style) ─────────────────
+
+function Visual5c({ isActive }: VisualProps) {
+  const avatarAnims = useRef(RECITER_IMAGES.map(() => new Animated.Value(0))).current;
+  const cycleRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const activeRef   = useRef(INITIAL_RECITER);
+
+  const [activeReciter, setActiveReciter] = useState(INITIAL_RECITER);
+
+  useEffect(() => {
+    if (!isActive) {
+      if (cycleRef.current) clearInterval(cycleRef.current);
+      avatarAnims.forEach((a) => a.setValue(0));
+      activeRef.current = INITIAL_RECITER;
+      setActiveReciter(INITIAL_RECITER);
+      return;
+    }
+
+    const entrance = Animated.stagger(130, avatarAnims.map((a, i) =>
+      Animated.timing(a, {
+        toValue: i === INITIAL_RECITER ? 1.0 : 0.6,
+        duration: 440, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+      })
+    ));
+    entrance.start();
+
+    cycleRef.current = setInterval(() => {
+      const current = activeRef.current;
+      const next    = (current + 1) % RECITER_IMAGES.length;
+
+      Animated.parallel([
+        Animated.timing(avatarAnims[current], { toValue: 0.6, duration: 420, useNativeDriver: true }),
+        Animated.timing(avatarAnims[next],    { toValue: 1.0, duration: 420, useNativeDriver: true }),
+      ]).start();
+
+      setActiveReciter(next);
+      activeRef.current = next;
+    }, CYCLE_MS);
+
+    return () => {
+      if (cycleRef.current) clearInterval(cycleRef.current);
+      entrance.stop();
+    };
+  }, [isActive]);
+
+  // Render active card last so it's on top (painter's order = z-order)
+  const renderOrder = useMemo(() => {
+    const inactive = [0, 1, 2, 3].filter((i) => i !== activeReciter);
+    return [...inactive, activeReciter];
+  }, [activeReciter]);
+
+  const stackH = TILT_CARD_H + (RECITER_IMAGES.length - 1) * TILT_STEP;
+
+  return (
+    <View style={vis.center}>
+      <View style={{ width: TILT_CARD_W + 24, height: stackH }}>
+        {renderOrder.map((i) => {
+          const anim = avatarAnims[i];
+          const { rotate, xOffset } = CARD_TILTS[i];
+          const isActiveR = i === activeReciter;
+          return (
+            <Animated.View key={i} style={[
+              vis.tiltCard,
+              {
+                top:         i * TILT_STEP,
+                left:        12 + xOffset,
+                borderColor: isActiveR ? APP_PRIMARY : 'rgba(255,255,255,0.18)',
+                shadowOpacity: isActiveR ? 0.35 : 0.08,
+                transform: [
+                  { rotate },
+                  { scale: anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.78, 0.92, 1.0] }) },
+                ],
+                opacity: anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 0.65, 1] }),
+              },
+            ]}>
+              <Image source={RECITER_IMAGES[i].img} style={vis.tiltCardImg} />
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.6)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={vis.tiltCardOverlay}
+              >
+                <Text style={vis.tiltCardName}>{RECITER_IMAGES[i].name}</Text>
+              </LinearGradient>
+            </Animated.View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 // ─── Visual 6: Begin — icon breathes gently ───────────────────────────────────
 
 function Visual6({ isActive }: VisualProps) {
@@ -573,7 +803,7 @@ function Visual6({ isActive }: VisualProps) {
   );
 }
 
-const VISUALS = [Visual1, Visual2, Visual3, Visual4, Visual5, Visual6];
+const VISUALS = [Visual1, Visual2, Visual3, Visual4, Visual5, Visual5b, Visual5c, Visual6];
 
 // ─── Visual styles ────────────────────────────────────────────────────────────
 
@@ -760,6 +990,79 @@ const vis = StyleSheet.create({
     fontSize: 12,
     color: TEXT_SECONDARY,
     textAlign: 'center',
+  },
+
+  // Square card grid (slide 6 / Visual5b)
+  cardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  reciterCard: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  reciterCardActive: {
+    borderColor: APP_PRIMARY,
+    shadowColor: APP_PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  reciterCardImg: {
+    width: '100%',
+    height: '100%',
+  },
+  cardOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 22,
+    paddingBottom: 8,
+    paddingHorizontal: 10,
+  },
+  cardOverlayName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+
+  // Fanned tilted cards (slide 7 / Visual5c)
+  tiltCard: {
+    position: 'absolute',
+    width: TILT_CARD_W,
+    height: TILT_CARD_H,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  tiltCardImg: {
+    width: '100%',
+    height: '100%',
+  },
+  tiltCardOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 30,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+  },
+  tiltCardName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 
   // Waveform (slide 5)
