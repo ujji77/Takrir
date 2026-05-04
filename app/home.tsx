@@ -399,6 +399,9 @@ export default function HomeScreen() {
 
       {/* Recent playlists — quick access pills */}
       {recentItems.length > 0 && (
+        <Text style={styles.recentTitle}>Recent lessons</Text>
+      )}
+      {recentItems.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -604,6 +607,15 @@ const styles = StyleSheet.create({
   },
 
   // Recent playlists strip
+  recentTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: TEXT_SECONDARY,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    paddingHorizontal: CONTENT_H_PAD,
+    marginBottom: 8,
+  },
   recentStrip: {
     maxHeight: 48,
     marginBottom: 10,
