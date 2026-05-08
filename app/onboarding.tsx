@@ -359,9 +359,9 @@ function Visual3({ isActive }: VisualProps) {
 // ─── Visual 4: Verse repeat — animated repetition counter ────────────────────
 
 const VERSE_ITEMS = [
-  { num: 1, arabic: 'قُلۡ هُوَ ٱللَّهُ أَحَدٌ' },
-  { num: 2, arabic: 'ٱللَّهُ ٱلصَّمَدُ'         },
-  { num: 3, arabic: 'لَمۡ يَلِدۡ وَلَمۡ يُولَدۡ' },
+  { key: '112:1', arabic: 'قُلۡ هُوَ ٱللَّهُ أَحَدٌ',    translation: 'Say: He is Allah, One'              },
+  { key: '112:2', arabic: 'ٱللَّهُ ٱلصَّمَدُ',             translation: 'Allah, the Eternal Refuge'          },
+  { key: '112:3', arabic: 'لَمۡ يَلِدۡ وَلَمۡ يُولَدۡ',  translation: 'He neither begets nor is born'      },
 ];
 
 function VisualRepeat({ isActive }: VisualProps) {
@@ -423,42 +423,43 @@ function VisualRepeat({ isActive }: VisualProps) {
 
   return (
     <View style={vis.center}>
-      <View style={vis.playlistWrap}>
+      <View style={{ paddingHorizontal: 24, width: SW }}>
         {VERSE_ITEMS.map((item, i) => {
           const isMid = i === 1;
           return (
-            <Animated.View key={i} style={[
-              vis.playlistRow,
-              isMid && vis.playlistRowActive,
-              {
-                opacity:   rowAnims[i],
-                transform: [{ translateX: rowAnims[i].interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
-              },
-            ]}>
-              <View style={vis.verseNumBadge}>
-                <Text style={[vis.verseNumText, isMid && { color: APP_PRIMARY }]}>{item.num}</Text>
-              </View>
-              <Text style={[vis.verseArabic, isMid && { color: TEXT_PRIMARY }]} numberOfLines={1}>
-                {item.arabic}
-              </Text>
-              {isMid ? (
-                <View style={vis.repeatControl}>
-                  <Animated.View style={[vis.repeatBtn, { transform: [{ scale: minusScale }] }]}>
-                    <Text style={vis.repeatBtnText}>−</Text>
+            <View key={i}>
+              <Animated.View style={[
+                vis.plVerseRow,
+                {
+                  opacity:   rowAnims[i],
+                  transform: [{ translateX: rowAnims[i].interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
+                },
+              ]}>
+                <Text style={vis.plVerseNumber}>{item.key}</Text>
+                <View style={vis.plVerseContent}>
+                  <Text style={vis.plArabicText}>{item.arabic}</Text>
+                  <Text style={vis.plTranslationText}>{item.translation}</Text>
+                </View>
+                <View style={vis.plRepeater}>
+                  <Animated.View style={[vis.plRepeaterUp, isMid && { transform: [{ scale: plusScale }] }]}>
+                    <Text style={vis.plRepeaterIcon}>+</Text>
                   </Animated.View>
-                  <Animated.Text style={[vis.repeatCountNum, { transform: [{ scale: countScale }] }]}>
-                    {count}
-                  </Animated.Text>
-                  <Animated.View style={[vis.repeatBtn, vis.repeatBtnPlus, { transform: [{ scale: plusScale }] }]}>
-                    <Text style={[vis.repeatBtnText, { color: SURFACE }]}>+</Text>
+                  <View style={vis.plRepeaterMiddle}>
+                    {isMid ? (
+                      <Animated.Text style={[vis.plRepeaterCount, { transform: [{ scale: countScale }] }]}>
+                        x {count}
+                      </Animated.Text>
+                    ) : (
+                      <Text style={vis.plRepeaterCount}>x 1</Text>
+                    )}
+                  </View>
+                  <Animated.View style={[vis.plRepeaterDown, isMid && { transform: [{ scale: minusScale }] }]}>
+                    <Text style={vis.plRepeaterIcon}>−</Text>
                   </Animated.View>
                 </View>
-              ) : (
-                <View style={vis.repeatPlaceholder}>
-                  <Text style={vis.repeatPlaceholderText}>×1</Text>
-                </View>
-              )}
-            </Animated.View>
+              </Animated.View>
+              {i < VERSE_ITEMS.length - 1 && <View style={vis.plDivider} />}
+            </View>
           );
         })}
       </View>
@@ -932,64 +933,83 @@ const vis = StyleSheet.create({
     marginLeft: 2,
   },
 
-  // Verse repeat (slide 4)
-  verseNumBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
-    backgroundColor: `${APP_PRIMARY}15`,
+  // Playlist-matched verse rows (slide 4)
+  plVerseRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    gap: 20,
   },
-  verseNumText: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-    color: TEXT_MUTED,
-  },
-  verseArabic: {
-    flex: 1,
-    fontSize: 18,
-    color: TEXT_SECONDARY,
-    textAlign: 'right' as const,
-  },
-  repeatControl: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 7,
-    marginLeft: 14,
-  },
-  repeatBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: `${APP_PRIMARY}18`,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-  },
-  repeatBtnPlus: {
-    backgroundColor: APP_PRIMARY,
-  },
-  repeatBtnText: {
-    fontSize: 18,
+  plVerseNumber: {
+    fontSize: 14,
     color: APP_PRIMARY,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    width: 52,
+    textAlign: 'center',
+  },
+  plVerseContent: {
+    flex: 1,
+    gap: 12,
+  },
+  plArabicText: {
+    fontSize: 18,
+    color: TEXT_MUTED,
+    textAlign: 'right',
+    lineHeight: 36,
+  },
+  plTranslationText: {
+    fontSize: 14,
+    color: TEXT_MUTED,
     lineHeight: 22,
   },
-  repeatCountNum: {
-    fontSize: 17,
-    fontWeight: '700' as const,
-    color: APP_PRIMARY,
-    minWidth: 18,
-    textAlign: 'center' as const,
+  plDivider: {
+    height: 1,
+    backgroundColor: 'rgba(0,0,0,0.07)',
+    marginVertical: 20,
   },
-  repeatPlaceholder: {
-    width: 74,
-    marginLeft: 14,
-    alignItems: 'flex-end' as const,
+  plRepeater: {
+    width: 35,
+    alignItems: 'center',
   },
-  repeatPlaceholderText: {
-    fontSize: 13,
+  plRepeaterUp: {
+    width: 35,
+    height: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D2D2D2',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  plRepeaterMiddle: {
+    width: 35,
+    height: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#D2D2D2',
+    backgroundColor: '#FFFFFFB2',
+  },
+  plRepeaterDown: {
+    width: 35,
+    height: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D2D2D2',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  plRepeaterIcon: {
+    fontSize: 16,
+    color: TEXT_PRIMARY,
+    lineHeight: 20,
+  },
+  plRepeaterCount: {
+    fontSize: 14,
     color: TEXT_MUTED,
+    textAlign: 'center',
   },
 
   // Fanned tilted cards (slide 6)
