@@ -20,7 +20,6 @@ import {
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, RadialGradient as SvgRadial, Stop, Rect } from 'react-native-svg';
 import TakrirIcon from '../assets/takrir-icon-black.svg';
 import { useAuthStore } from '../src/store/auth';
 import {
@@ -81,20 +80,8 @@ const SLIDES: Slide[] = [
   },
   {
     id: '6',
-    headline: 'Find your reciter.',
-    body: 'Each voice brings its own depth to the words of Allah.',
-    isFinal: false,
-  },
-  {
-    id: '7',
-    headline: 'Every voice tells a story.',
-    body: 'Let your heart guide you to the recitation that moves you.',
-    isFinal: false,
-  },
-  {
-    id: '8',
-    headline: 'Begin your recitation.',
-    body: '',
+    headline: 'Your practice starts now.',
+    body: 'Pick a surah. Set your verses. Let the repetition do its work.',
     isFinal: true,
   },
 ];
@@ -129,9 +116,9 @@ function Visual1({ isActive }: VisualProps) {
         opacity: iconAnim,
         transform: [{ scale: iconAnim.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] }) }],
       }}>
-        <TakrirIcon width={80} height={107} />
+        <TakrirIcon width={108} height={144} />
       </Animated.View>
-      <View style={{ height: 28 }} />
+      <View style={{ height: 20 }} />
       <Animated.View style={{
         opacity: textAnim,
         transform: [{ translateY: textAnim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
@@ -147,7 +134,7 @@ function Visual1({ isActive }: VisualProps) {
 // ─── Visual 2: Repetition — ripple rings ──────────────────────────────────────
 
 function Visual2({ isActive }: VisualProps) {
-  const SIZE       = 220;
+  const SIZE       = 290;
   const ringScales = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]).current;
   const iconOpacity = useRef(new Animated.Value(0)).current;
   const animRef     = useRef<Animated.CompositeAnimation | null>(null);
@@ -178,8 +165,8 @@ function Visual2({ isActive }: VisualProps) {
   }, [isActive]);
 
   const RING_CONFIGS = [
-    { size: 110, opacity: 0.28, scale: ringScales[0] },
-    { size: 165, opacity: 0.18, scale: ringScales[1] },
+    { size: 145, opacity: 0.28, scale: ringScales[0] },
+    { size: 218, opacity: 0.18, scale: ringScales[1] },
     { size: SIZE, opacity: 0.1,  scale: ringScales[2] },
   ];
 
@@ -199,10 +186,10 @@ function Visual2({ isActive }: VisualProps) {
         })}
         <Animated.View style={{
           position: 'absolute',
-          top: (SIZE - 52) / 2, left: (SIZE - 40) / 2,
+          top: (SIZE - 80) / 2, left: (SIZE - 60) / 2,
           opacity: iconOpacity,
         }}>
-          <TakrirIcon width={40} height={52} />
+          <TakrirIcon width={60} height={80} />
         </Animated.View>
       </View>
     </View>
@@ -220,7 +207,7 @@ const SENTENCE_TOKENS = [
   { type: 'versePillTo',     text: ''                     },
 ] as const;
 
-const GRID_NUMS = [1, 2, 3, 4, 5, 6, 7];
+const GRID_NUMS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 function Visual3({ isActive }: VisualProps) {
   const tokenAnims = useRef(SENTENCE_TOKENS.map(() => new Animated.Value(0))).current;
@@ -268,18 +255,18 @@ function Visual3({ isActive }: VisualProps) {
     staggerRef.current.start();
 
     const runCycle = (startDelay: number) => {
-      // From-verse selection: highlight 1 → 2
-      at(() => { setGridMode('from'); setHighlighted(1); showGrid(); }, startDelay);
-      at(() => setHighlighted(2), startDelay + 300);
-      at(() => setFromVerse(2),   startDelay + 520);
-      at(() => hideGrid(),        startDelay + 780);
+      // From-verse selection: highlight 2 → 3
+      at(() => { setGridMode('from'); setHighlighted(2); showGrid(); }, startDelay);
+      at(() => setHighlighted(3), startDelay + 550);
+      at(() => setFromVerse(3),   startDelay + 950);
+      at(() => hideGrid(),        startDelay + 1300);
 
-      // To-verse selection: highlight 7 → 6 → 5
-      at(() => { setGridMode('to'); setHighlighted(7); showGrid(); }, startDelay + 1080);
-      at(() => setHighlighted(6), startDelay + 1330);
-      at(() => setHighlighted(5), startDelay + 1580);
-      at(() => setToVerse(5),     startDelay + 1800);
-      at(() => hideGrid(),        startDelay + 2060);
+      // To-verse selection: highlight 14 → 13 → 12
+      at(() => { setGridMode('to'); setHighlighted(14); showGrid(); }, startDelay + 1900);
+      at(() => setHighlighted(13), startDelay + 2450);
+      at(() => setHighlighted(12), startDelay + 3000);
+      at(() => setToVerse(12),     startDelay + 3400);
+      at(() => hideGrid(),         startDelay + 3750);
 
       // Reset + loop
       at(() => {
@@ -288,7 +275,7 @@ function Visual3({ isActive }: VisualProps) {
         setHighlighted(null);
         setGridMode(null);
         runCycle(0);
-      }, startDelay + 3600);
+      }, startDelay + 5800);
     };
 
     runCycle(950);
@@ -348,65 +335,119 @@ function Visual3({ isActive }: VisualProps) {
           <Text style={vis.miniGridLabel}>
             {gridMode === 'from' ? 'start verse' : 'end verse'}
           </Text>
-          <View style={vis.miniGridRow}>
-            {GRID_NUMS.map((n) => (
-              <View key={n} style={[vis.gridCell, n === highlighted && vis.gridCellHL]}>
-                <Text style={[vis.gridCellText, n === highlighted && vis.gridCellTextHL]}>{n}</Text>
-              </View>
-            ))}
-          </View>
+          {[GRID_NUMS.slice(0, 7), GRID_NUMS.slice(7)].map((row, ri) => (
+            <View key={ri} style={[vis.miniGridRow, ri > 0 && { marginTop: 6 }]}>
+              {row.map((n) => (
+                <View key={n} style={[vis.gridCell, n === highlighted && vis.gridCellHL]}>
+                  <Text style={[vis.gridCellText, n === highlighted && vis.gridCellTextHL]}>{n}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
         </Animated.View>
       </View>
     </View>
   );
 }
 
-// ─── Visual 4: Playlist — rows slide in from right, staggered ─────────────────
+// ─── Visual 4: Playlist — rows slide in, then cycle active playing item ────────
 
 const PLAYLIST_ITEMS = [
-  { surah: 'Al-Fatiha',  range: 'Verses 1 – 7', active: true  },
-  { surah: 'Al-Baqarah', range: 'Verse 255',     active: false },
-  { surah: 'Al-Ikhlas',  range: 'Verses 1 – 4',  active: false },
+  { surah: 'Al-Fatiha',  range: 'Verses 1 – 7' },
+  { surah: 'Al-Baqarah', range: 'Verse 255'     },
+  { surah: 'Al-Ikhlas',  range: 'Verses 1 – 4'  },
 ];
 
 function Visual4({ isActive }: VisualProps) {
-  const rowAnims = useRef(PLAYLIST_ITEMS.map(() => new Animated.Value(0))).current;
-  const animRef  = useRef<Animated.CompositeAnimation | null>(null);
+  const rowAnims    = useRef(PLAYLIST_ITEMS.map(() => new Animated.Value(0))).current;
+  const pulseAnim   = useRef(new Animated.Value(1)).current;
+  const entranceRef = useRef<Animated.CompositeAnimation | null>(null);
+  const pulseRef    = useRef<Animated.CompositeAnimation | null>(null);
+  const timersRef   = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const [playingIndex, setPlayingIndex] = useState(0);
+  const [showPause,    setShowPause]    = useState(false);
+
+  const clearTimers = () => { timersRef.current.forEach(clearTimeout); timersRef.current = []; };
+  const at = (fn: () => void, ms: number) => { const t = setTimeout(fn, ms); timersRef.current.push(t); };
+
+  const startPulse = () => {
+    pulseRef.current?.stop();
+    pulseAnim.setValue(1);
+    pulseRef.current = Animated.loop(Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 1.14, duration: 650, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1,    duration: 650, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+    ]));
+    pulseRef.current.start();
+  };
+
+  const runCycle = (index: number) => {
+    setPlayingIndex(index);
+    setShowPause(false);           // ▶ play icon — item just became active
+    at(() => { setShowPause(true);  startPulse(); }, 800);   // ⏸ pause — now "playing"
+    at(() =>   setShowPause(false),                  2900);  // ▶ play — about to switch
+    at(() =>   runCycle((index + 1) % PLAYLIST_ITEMS.length), 3600); // next item
+  };
 
   useEffect(() => {
     if (!isActive) {
-      animRef.current?.stop();
+      entranceRef.current?.stop();
+      pulseRef.current?.stop();
+      clearTimers();
       rowAnims.forEach((a) => a.setValue(0));
+      pulseAnim.setValue(1);
+      setPlayingIndex(0);
+      setShowPause(false);
       return;
     }
-    animRef.current = Animated.stagger(150, rowAnims.map((a) =>
+
+    entranceRef.current = Animated.stagger(150, rowAnims.map((a) =>
       Animated.timing(a, { toValue: 1, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true })
     ));
-    animRef.current.start();
-    return () => { animRef.current?.stop(); };
+    entranceRef.current.start(() => runCycle(0));
+
+    return () => {
+      entranceRef.current?.stop();
+      pulseRef.current?.stop();
+      clearTimers();
+    };
   }, [isActive]);
 
   return (
     <View style={vis.center}>
       <View style={vis.playlistWrap}>
-        {PLAYLIST_ITEMS.map((item, i) => (
-          <Animated.View key={i} style={[
-            vis.playlistRow,
-            item.active && vis.playlistRowActive,
-            {
-              opacity: rowAnims[i],
-              transform: [{ translateX: rowAnims[i].interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
-            },
-          ]}>
-            <View style={{ flex: 1 }}>
-              <Text style={[vis.playlistSurah, item.active && { color: TEXT_PRIMARY }]}>{item.surah}</Text>
-              <Text style={vis.playlistRange}>{item.range}</Text>
-            </View>
-            <View style={[vis.playCircle, item.active && { backgroundColor: APP_PRIMARY }]}>
-              <Text style={[vis.playArrow, item.active && { color: SURFACE }]}>{'▶'}</Text>
-            </View>
-          </Animated.View>
-        ))}
+        {PLAYLIST_ITEMS.map((item, i) => {
+          const isActive = i === playingIndex;
+          return (
+            <Animated.View key={i} style={[
+              vis.playlistRow,
+              isActive && vis.playlistRowActive,
+              {
+                opacity:   rowAnims[i],
+                transform: [{ translateX: rowAnims[i].interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
+              },
+            ]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[vis.playlistSurah, isActive && { color: TEXT_PRIMARY }]}>{item.surah}</Text>
+                <Text style={vis.playlistRange}>{item.range}</Text>
+              </View>
+              <Animated.View style={[
+                vis.playCircle,
+                isActive && { backgroundColor: APP_PRIMARY },
+                isActive && showPause && { transform: [{ scale: pulseAnim }] },
+              ]}>
+                {isActive && showPause ? (
+                  <View style={{ flexDirection: 'row', gap: 3 }}>
+                    <View style={{ width: 3, height: 11, backgroundColor: SURFACE, borderRadius: 1.5 }} />
+                    <View style={{ width: 3, height: 11, backgroundColor: SURFACE, borderRadius: 1.5 }} />
+                  </View>
+                ) : (
+                  <Text style={[vis.playArrow, isActive && { color: SURFACE }]}>{'▶'}</Text>
+                )}
+              </Animated.View>
+            </Animated.View>
+          );
+        })}
       </View>
     </View>
   );
@@ -433,9 +474,9 @@ const INITIAL_RECITER = 2; // Mishary
 const PHASES          = 4;
 const CYCLE_MS        = 2600;
 
-// Visual5c — horizontal fanned card layout
-const TILT_CARD_W = 96;
-const TILT_CARD_H = 128;
+// Horizontal fanned card layout
+const TILT_CARD_W = 116;
+const TILT_CARD_H = 155;
 // Per-card: horizontal offset from center, vertical jitter, rotation
 const CARD_OFFSETS = [
   { x: -118, y:  6, rotate: '-7deg'   },
@@ -444,233 +485,9 @@ const CARD_OFFSETS = [
   { x:  118, y: -6, rotate: '6.5deg'  },
 ] as const;
 
+// ─── Visual 5: Reciters — horizontal fanned tilted cards + waveform ──────────
+
 function Visual5({ isActive }: VisualProps) {
-  // 0 = invisible, 0.6 = entered+inactive, 1.0 = entered+active
-  const avatarAnims  = useRef(RECITER_IMAGES.map((_, i) => new Animated.Value(0))).current;
-  const waveOpacity  = useRef(new Animated.Value(1)).current;
-  const phaseAnims   = useRef(Array.from({ length: PHASES }, () => new Animated.Value(0))).current;
-  const waveAnimRef  = useRef<Animated.CompositeAnimation | null>(null);
-  const cycleRef     = useRef<ReturnType<typeof setInterval> | null>(null);
-  const activeRef    = useRef(INITIAL_RECITER);
-
-  const [activeReciter, setActiveReciter] = useState(INITIAL_RECITER);
-
-  useEffect(() => {
-    if (!isActive) {
-      if (cycleRef.current) clearInterval(cycleRef.current);
-      waveAnimRef.current?.stop();
-      avatarAnims.forEach((a) => a.setValue(0));
-      phaseAnims.forEach((a) => a.setValue(0));
-      waveOpacity.setValue(1);
-      activeRef.current = INITIAL_RECITER;
-      setActiveReciter(INITIAL_RECITER);
-      return;
-    }
-
-    // Avatar entrance: stagger in to inactive (0.6) or active (1.0) level
-    const entrance = Animated.stagger(100, avatarAnims.map((a, i) =>
-      Animated.timing(a, {
-        toValue: i === INITIAL_RECITER ? 1.0 : 0.6,
-        duration: 380, easing: Easing.out(Easing.cubic), useNativeDriver: true,
-      })
-    ));
-    entrance.start();
-
-    // Waveform equaliser: 4-phase scaleY loop
-    const makePhaseLoop = (anim: Animated.Value, delay: number) =>
-      Animated.sequence([
-        Animated.delay(delay),
-        Animated.loop(Animated.sequence([
-          Animated.timing(anim, { toValue: 1,    duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0.15, duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        ])),
-      ]);
-
-    waveAnimRef.current = Animated.parallel(phaseAnims.map((a, i) => makePhaseLoop(a, i * 200)));
-    waveAnimRef.current.start();
-
-    // Cycle through reciters
-    cycleRef.current = setInterval(() => {
-      const current = activeRef.current;
-      const next    = (current + 1) % RECITER_IMAGES.length;
-
-      // Transition avatar highlights
-      Animated.parallel([
-        Animated.timing(avatarAnims[current], { toValue: 0.6, duration: 400, useNativeDriver: true }),
-        Animated.timing(avatarAnims[next],    { toValue: 1.0, duration: 400, useNativeDriver: true }),
-      ]).start();
-
-      // Crossfade waveform to new pattern
-      Animated.timing(waveOpacity, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
-        setActiveReciter(next);
-        activeRef.current = next;
-        Animated.timing(waveOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
-      });
-    }, CYCLE_MS);
-
-    return () => {
-      if (cycleRef.current) clearInterval(cycleRef.current);
-      entrance.stop();
-      waveAnimRef.current?.stop();
-    };
-  }, [isActive]);
-
-  const waveH = WAVEFORMS[activeReciter];
-
-  return (
-    <View style={vis.center}>
-      <View style={vis.reciterGrid}>
-        {RECITER_IMAGES.map((r, i) => {
-          const anim = avatarAnims[i];
-          const isActiveR = i === activeReciter;
-          return (
-            <Animated.View key={i} style={[vis.reciterItem, {
-              opacity:   anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 0.5, 1] }),
-              transform: [{ scale: anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.78, 0.9, 1.0] }) }],
-            }]}>
-              <View style={[vis.reciterAvatar, isActiveR && vis.reciterAvatarActive]}>
-                <Image source={r.img} style={vis.reciterImg} />
-              </View>
-              <Text style={[vis.reciterName, isActiveR && { color: TEXT_PRIMARY, fontWeight: '600' }]}>
-                {r.name}
-              </Text>
-            </Animated.View>
-          );
-        })}
-      </View>
-      <View style={{ height: 28 }} />
-      <Animated.View style={[vis.waveformRow, { opacity: waveOpacity }]}>
-        {waveH.map((h, i) => (
-          <Animated.View key={i} style={[
-            vis.wavebar,
-            { height: h },
-            i < 9 ? { backgroundColor: APP_PRIMARY } : { backgroundColor: `${APP_PRIMARY}40` },
-            { transform: [{ scaleY: phaseAnims[i % PHASES].interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] },
-          ]} />
-        ))}
-      </Animated.View>
-    </View>
-  );
-}
-
-// ─── Visual 5b: Reciters — square card grid + waveform ────────────────────────
-
-function Visual5b({ isActive }: VisualProps) {
-  const avatarAnims = useRef(RECITER_IMAGES.map(() => new Animated.Value(0))).current;
-  const waveOpacity = useRef(new Animated.Value(1)).current;
-  const phaseAnims  = useRef(Array.from({ length: PHASES }, () => new Animated.Value(0))).current;
-  const waveAnimRef = useRef<Animated.CompositeAnimation | null>(null);
-  const cycleRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const activeRef   = useRef(INITIAL_RECITER);
-
-  const [activeReciter, setActiveReciter] = useState(INITIAL_RECITER);
-
-  useEffect(() => {
-    if (!isActive) {
-      if (cycleRef.current) clearInterval(cycleRef.current);
-      waveAnimRef.current?.stop();
-      avatarAnims.forEach((a) => a.setValue(0));
-      phaseAnims.forEach((a) => a.setValue(0));
-      waveOpacity.setValue(1);
-      activeRef.current = INITIAL_RECITER;
-      setActiveReciter(INITIAL_RECITER);
-      return;
-    }
-
-    const entrance = Animated.stagger(100, avatarAnims.map((a, i) =>
-      Animated.timing(a, {
-        toValue: i === INITIAL_RECITER ? 1.0 : 0.6,
-        duration: 380, easing: Easing.out(Easing.cubic), useNativeDriver: true,
-      })
-    ));
-    entrance.start();
-
-    const makePhaseLoop = (anim: Animated.Value, delay: number) =>
-      Animated.sequence([
-        Animated.delay(delay),
-        Animated.loop(Animated.sequence([
-          Animated.timing(anim, { toValue: 1,    duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0.15, duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        ])),
-      ]);
-
-    waveAnimRef.current = Animated.parallel(phaseAnims.map((a, i) => makePhaseLoop(a, i * 200)));
-    waveAnimRef.current.start();
-
-    cycleRef.current = setInterval(() => {
-      const current = activeRef.current;
-      const next    = (current + 1) % RECITER_IMAGES.length;
-
-      Animated.parallel([
-        Animated.timing(avatarAnims[current], { toValue: 0.6, duration: 400, useNativeDriver: true }),
-        Animated.timing(avatarAnims[next],    { toValue: 1.0, duration: 400, useNativeDriver: true }),
-      ]).start();
-
-      Animated.timing(waveOpacity, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
-        setActiveReciter(next);
-        activeRef.current = next;
-        Animated.timing(waveOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
-      });
-    }, CYCLE_MS);
-
-    return () => {
-      if (cycleRef.current) clearInterval(cycleRef.current);
-      entrance.stop();
-      waveAnimRef.current?.stop();
-    };
-  }, [isActive]);
-
-  const cardW = (SW - 64 - 10) / 2;
-  const cardH = cardW * 0.68;
-  const waveH = WAVEFORMS[activeReciter];
-
-  return (
-    <View style={vis.center}>
-      <View style={vis.cardGrid}>
-        {RECITER_IMAGES.map((r, i) => {
-          const anim = avatarAnims[i];
-          const isActiveR = i === activeReciter;
-          return (
-            <Animated.View key={i} style={[
-              vis.reciterCard,
-              { width: cardW, height: cardH },
-              isActiveR && vis.reciterCardActive,
-              {
-                opacity:   anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 0.5, 1] }),
-                transform: [{ scale: anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.78, 0.9, 1.0] }) }],
-              },
-            ]}>
-              <Image source={r.img} style={vis.reciterCardImg} />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.62)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={vis.cardOverlay}
-              >
-                <Text style={vis.cardOverlayName}>{r.name}</Text>
-              </LinearGradient>
-            </Animated.View>
-          );
-        })}
-      </View>
-      <View style={{ height: 22 }} />
-      <Animated.View style={[vis.waveformRow, { opacity: waveOpacity }]}>
-        {waveH.map((h, i) => (
-          <Animated.View key={i} style={[
-            vis.wavebar,
-            { height: h },
-            i < 9 ? { backgroundColor: APP_PRIMARY } : { backgroundColor: `${APP_PRIMARY}40` },
-            { transform: [{ scaleY: phaseAnims[i % PHASES].interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] },
-          ]} />
-        ))}
-      </Animated.View>
-    </View>
-  );
-}
-
-// ─── Visual 5c: Reciters — horizontal fanned tilted cards + waveform ─────────
-
-function Visual5c({ isActive }: VisualProps) {
   const avatarAnims = useRef(RECITER_IMAGES.map(() => new Animated.Value(0))).current;
   const waveOpacity = useRef(new Animated.Value(1)).current;
   const phaseAnims  = useRef(Array.from({ length: PHASES }, () => new Animated.Value(0))).current;
@@ -842,7 +659,7 @@ function Visual6({ isActive }: VisualProps) {
   );
 }
 
-const VISUALS = [Visual1, Visual2, Visual3, Visual4, Visual5, Visual5b, Visual5c, Visual6];
+const VISUALS = [Visual1, Visual2, Visual3, Visual4, Visual5, Visual6];
 
 // ─── Visual styles ────────────────────────────────────────────────────────────
 
@@ -854,7 +671,7 @@ const vis = StyleSheet.create({
   },
 
   arabicWord: {
-    fontSize: 56,
+    fontSize: 60,
     color: '#111111',
     fontWeight: '300',
     textAlign: 'center',
@@ -960,37 +777,37 @@ const vis = StyleSheet.create({
 
   // Playlist mock (slide 4)
   playlistWrap: {
-    width: SW - 64,
-    gap: 10,
+    width: SW - 40,
+    gap: 12,
   },
   playlistRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: SURFACE_FROSTED,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 0.5,
     borderColor: `${APP_PRIMARY}40`,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
   },
   playlistRowActive: {
     borderColor: APP_PRIMARY,
     backgroundColor: `${APP_PRIMARY}08`,
   },
   playlistSurah: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
     color: TEXT_SECONDARY,
   },
   playlistRange: {
-    fontSize: 12,
+    fontSize: 14,
     color: TEXT_SECONDARY,
-    marginTop: 2,
+    marginTop: 3,
   },
   playCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: `${APP_PRIMARY}20`,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1001,78 +818,7 @@ const vis = StyleSheet.create({
     marginLeft: 2,
   },
 
-  // Reciters grid (slide 5)
-  reciterGrid: {
-    flexDirection: 'row',
-    gap: 24,
-  },
-  reciterItem: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  reciterAvatar: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  reciterAvatarActive: {
-    borderColor: APP_PRIMARY,
-  },
-  reciterImg: {
-    width: '100%',
-    height: '100%',
-  },
-  reciterName: {
-    fontSize: 12,
-    color: TEXT_SECONDARY,
-    textAlign: 'center',
-  },
-
-  // Square card grid (slide 6 / Visual5b)
-  cardGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  reciterCard: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  reciterCardActive: {
-    borderColor: APP_PRIMARY,
-    shadowColor: APP_PRIMARY,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  reciterCardImg: {
-    width: '100%',
-    height: '100%',
-  },
-  cardOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingTop: 22,
-    paddingBottom: 8,
-    paddingHorizontal: 10,
-  },
-  cardOverlayName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-
-  // Fanned tilted cards (slide 7 / Visual5c)
+  // Fanned tilted cards (slide 5)
   tiltCard: {
     position: 'absolute',
     width: TILT_CARD_W,
@@ -1117,88 +863,6 @@ const vis = StyleSheet.create({
   },
 });
 
-// ─── Background presets ───────────────────────────────────────────────────────
-
-type BgPreset = { id: string; label: string; swatch: string; containerBg: string };
-
-const BG_PRESETS: BgPreset[] = [
-  { id: 'sand',      label: 'Sand',      swatch: '#f5ece3', containerBg: '#f5ece3' },
-  { id: 'parchment', label: 'Parchment', swatch: '#f0ead8', containerBg: '#e4cebc' },
-  { id: 'dusk',      label: 'Dusk',      swatch: '#e2c49e', containerBg: '#f8ede2' },
-  { id: 'ochre',     label: 'Ochre',     swatch: '#e8ce68', containerBg: '#faf4e4' },
-  { id: 'dawn',      label: 'Dawn',      swatch: '#e8b8ac', containerBg: '#fde8de' },
-  { id: 'mist',      label: 'Mist',      swatch: '#c0b4b0', containerBg: '#d4c8bc' },
-];
-
-function BgOverlay({ id }: { id: string }) {
-  if (id === 'parchment') {
-    return (
-      <Svg style={StyleSheet.absoluteFill as any} height="100%" width="100%">
-        <Defs>
-          <SvgRadial id="bg_parchment" cx="50%" cy="35%" r="65%">
-            <Stop offset="0%" stopColor="#fdfaf3" />
-            <Stop offset="100%" stopColor="#e4cebc" />
-          </SvgRadial>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#bg_parchment)" />
-      </Svg>
-    );
-  }
-  if (id === 'dusk') {
-    return (
-      <LinearGradient
-        colors={['#f8ede2', '#dfc8a8']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-    );
-  }
-  if (id === 'ochre') {
-    return (
-      <>
-        <LinearGradient
-          colors={['rgba(245,200,64,0.22)', 'transparent']}
-          start={{ x: 1, y: 0 }}
-          end={{ x: 0.1, y: 0.55 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(232,148,40,0.18)']}
-          start={{ x: 0.1, y: 0.45 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-      </>
-    );
-  }
-  if (id === 'dawn') {
-    return (
-      <LinearGradient
-        colors={['#fde8de', '#f5ddd5', '#edd0c8']}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-    );
-  }
-  if (id === 'mist') {
-    return (
-      <Svg style={StyleSheet.absoluteFill as any} height="100%" width="100%">
-        <Defs>
-          <SvgRadial id="bg_mist" cx="50%" cy="50%" r="70%">
-            <Stop offset="0%" stopColor="#f5f0ec" />
-            <Stop offset="100%" stopColor="#d4c8bc" />
-          </SvgRadial>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#bg_mist)" />
-      </Svg>
-    );
-  }
-  return null; // 'sand' — solid containerBg only
-}
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
@@ -1210,36 +874,6 @@ export default function OnboardingScreen() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const listRef = useRef<FlatList<Slide>>(null);
-
-  // Background picker
-  const [bgId, setBgId]             = useState('sand');
-  const [pickerOpen, setPickerOpen]  = useState(false);
-  const pickerOpenRef = useRef(false);
-  const pickerAnim    = useRef(new Animated.Value(0)).current;
-  const activeBg = BG_PRESETS.find((p) => p.id === bgId) ?? BG_PRESETS[0];
-
-  const togglePicker = useCallback(() => {
-    const opening = !pickerOpenRef.current;
-    pickerOpenRef.current = opening;
-    setPickerOpen(opening);
-    Animated.timing(pickerAnim, {
-      toValue: opening ? 1 : 0,
-      duration: 180,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  const selectBg = useCallback((id: string) => {
-    setBgId(id);
-    pickerOpenRef.current = false;
-    setPickerOpen(false);
-    Animated.timing(pickerAnim, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
-  }, []);
 
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
@@ -1266,11 +900,6 @@ export default function OnboardingScreen() {
     setCurrentIndex(next);
   };
 
-  const handleSignIn = async () => {
-    await markSeen();
-    router.replace('/');
-  };
-
   const handleGuest = async () => {
     await markSeen();
     setGuest();
@@ -1285,10 +914,6 @@ export default function OnboardingScreen() {
   const onMomentumScrollEnd = useCallback((e: any) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / SW);
     setCurrentIndex(idx);
-    // Close picker on slide change
-    pickerOpenRef.current = false;
-    setPickerOpen(false);
-    pickerAnim.setValue(0);
   }, []);
 
   const renderItem = ({ item, index }: { item: Slide; index: number }) => {
@@ -1307,33 +932,7 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: topPad, backgroundColor: activeBg.containerBg }]}>
-      {/* Background gradient/shader overlay */}
-      <BgOverlay id={bgId} />
-
-      {/* Background picker — floating top-left */}
-      <View style={[styles.bgPickerWrap, { top: insets.top + 12 }]}>
-        <TouchableOpacity
-          style={[styles.bgPickerTrigger, { backgroundColor: activeBg.swatch }]}
-          onPress={togglePicker}
-          hitSlop={10}
-          activeOpacity={0.8}
-        />
-        <Animated.View
-          pointerEvents={pickerOpen ? 'auto' : 'none'}
-          style={[styles.bgPickerPanel, {
-            opacity: pickerAnim,
-            transform: [{ translateY: pickerAnim.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) }],
-          }]}
-        >
-          {BG_PRESETS.map((p) => (
-            <TouchableOpacity key={p.id} onPress={() => selectBg(p.id)} hitSlop={4} activeOpacity={0.75}>
-              <View style={[styles.bgSwatch, { backgroundColor: p.swatch }, p.id === bgId && styles.bgSwatchActive]} />
-            </TouchableOpacity>
-          ))}
-        </Animated.View>
-      </View>
-
+    <View style={[styles.container, { paddingTop: topPad, backgroundColor: '#f5ece3' }]}>
       {isModal && (
         <TouchableOpacity
           style={[styles.closeBtn, { top: insets.top + 12 }]}
@@ -1360,34 +959,26 @@ export default function OnboardingScreen() {
       />
 
       <View style={[styles.bottomBar, { height: BOTTOM_BAR_H + insets.bottom, paddingBottom: insets.bottom }]}>
-        {isLast ? (
-          isModal ? (
-            <TouchableOpacity style={styles.doneBtn} onPress={handleDone} activeOpacity={0.8}>
-              <Text style={[styles.doneBtnText, f600]}>Done</Text>
+        <View style={styles.navRow}>
+          <View style={styles.dotsRow}>
+            {SLIDES.map((_, i) => (
+              <View key={i} style={[styles.dot, i === currentIndex ? styles.dotActive : styles.dotInactive]} />
+            ))}
+          </View>
+          {isLast ? (
+            <TouchableOpacity
+              style={styles.ctaBtn}
+              onPress={isModal ? handleDone : handleGuest}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.ctaBtnText, f600]}>{isModal ? 'Done' : 'Begin'}</Text>
             </TouchableOpacity>
           ) : (
-            <View style={styles.finalCtaWrap}>
-              <TouchableOpacity onPress={handleSignIn} hitSlop={10} activeOpacity={0.7}>
-                <Text style={[styles.signInText, f600]}>Sign in</Text>
-              </TouchableOpacity>
-              <View style={{ height: 8 }} />
-              <TouchableOpacity onPress={handleGuest} hitSlop={10} activeOpacity={0.7}>
-                <Text style={[styles.guestText, f400]}>Continue as guest</Text>
-              </TouchableOpacity>
-            </View>
-          )
-        ) : (
-          <View style={styles.navRow}>
-            <View style={styles.dotsRow}>
-              {SLIDES.map((_, i) => (
-                <View key={i} style={[styles.dot, i === currentIndex ? styles.dotActive : styles.dotInactive]} />
-              ))}
-            </View>
             <TouchableOpacity style={styles.arrowBtn} onPress={handleNext} activeOpacity={0.85}>
               <Text style={styles.arrowText}>{'→'}</Text>
             </TouchableOpacity>
-          </View>
-        )}
+          )}
+        </View>
       </View>
     </View>
   );
@@ -1398,53 +989,6 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-
-  // Background picker
-  bgPickerWrap: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 10,
-    alignItems: 'flex-start',
-  },
-  bgPickerTrigger: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0,0,0,0.14)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  bgPickerPanel: {
-    marginTop: 8,
-    flexDirection: 'row',
-    gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.06)',
-  },
-  bgSwatch: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-  },
-  bgSwatchActive: {
-    borderWidth: 2.5,
-    borderColor: '#555555',
   },
 
   closeBtn: {
@@ -1516,29 +1060,15 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 
-  finalCtaWrap: {
-    alignItems: 'center',
-  },
-  signInText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#222222',
-    textDecorationLine: 'underline',
-  },
-  guestText: {
-    fontSize: 16,
-    color: '#222222',
-    textDecorationLine: 'underline',
-  },
-
-  doneBtn: {
-    alignSelf: 'center',
-    paddingHorizontal: 48,
-    paddingVertical: 14,
+  ctaBtn: {
+    paddingHorizontal: 24,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#111111',
-    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  doneBtnText: {
+  ctaBtnText: {
     fontSize: 16,
     color: '#ffffff',
   },
