@@ -68,18 +68,24 @@ const SLIDES: Slide[] = [
   },
   {
     id: '4',
+    headline: 'Repeat each verse as many times as you need.',
+    body: 'Some verses take time to sink in. Set the count, and Takrir handles the rest.',
+    isFinal: false,
+  },
+  {
+    id: '5',
     headline: 'Listen and learn on the go.',
     body: 'Build playlists around any portion of the Quran and take them wherever life takes you.',
     isFinal: false,
   },
   {
-    id: '5',
+    id: '6',
     headline: 'Connect your heart with beautiful recitations.',
     body: 'Choose from world-class reciters, each bringing a unique voice to the words of Allah.',
     isFinal: false,
   },
   {
-    id: '6',
+    id: '7',
     headline: 'Your practice starts now.',
     body: 'Pick a surah. Set your verses. Let the repetition do its work.',
     isFinal: true,
@@ -350,7 +356,117 @@ function Visual3({ isActive }: VisualProps) {
   );
 }
 
-// ─── Visual 4: Playlist — rows slide in, then cycle active playing item ────────
+// ─── Visual 4: Verse repeat — animated repetition counter ────────────────────
+
+const VERSE_ITEMS = [
+  { num: 1, arabic: 'قُلۡ هُوَ ٱللَّهُ أَحَدٌ' },
+  { num: 2, arabic: 'ٱللَّهُ ٱلصَّمَدُ'         },
+  { num: 3, arabic: 'لَمۡ يَلِدۡ وَلَمۡ يُولَدۡ' },
+];
+
+function VisualRepeat({ isActive }: VisualProps) {
+  const rowAnims    = useRef(VERSE_ITEMS.map(() => new Animated.Value(0))).current;
+  const plusScale   = useRef(new Animated.Value(1)).current;
+  const minusScale  = useRef(new Animated.Value(1)).current;
+  const countScale  = useRef(new Animated.Value(1)).current;
+  const entranceRef = useRef<Animated.CompositeAnimation | null>(null);
+  const timersRef   = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const [count, setCount] = useState(1);
+
+  const clearTimers = () => { timersRef.current.forEach(clearTimeout); timersRef.current = []; };
+  const at = (fn: () => void, ms: number) => { const t = setTimeout(fn, ms); timersRef.current.push(t); };
+
+  const tap = (btnScale: Animated.Value, newCount: number) => {
+    Animated.sequence([
+      Animated.timing(btnScale, { toValue: 0.72, duration: 90,  useNativeDriver: true }),
+      Animated.timing(btnScale, { toValue: 1,    duration: 160, useNativeDriver: true }),
+    ]).start();
+    at(() => {
+      setCount(newCount);
+      Animated.sequence([
+        Animated.timing(countScale, { toValue: 1.4, duration: 90,  useNativeDriver: true }),
+        Animated.timing(countScale, { toValue: 1,   duration: 140, useNativeDriver: true }),
+      ]).start();
+    }, 120);
+  };
+
+  useEffect(() => {
+    if (!isActive) {
+      entranceRef.current?.stop();
+      clearTimers();
+      rowAnims.forEach((a) => a.setValue(0));
+      plusScale.setValue(1);
+      minusScale.setValue(1);
+      countScale.setValue(1);
+      setCount(1);
+      return;
+    }
+
+    entranceRef.current = Animated.stagger(150, rowAnims.map((a) =>
+      Animated.timing(a, { toValue: 1, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true })
+    ));
+
+    entranceRef.current.start(() => {
+      const runCycle = () => {
+        at(() => tap(plusScale,  2), 800);
+        at(() => tap(plusScale,  3), 2000);
+        at(() => tap(minusScale, 2), 3300);
+        at(() => tap(minusScale, 1), 4500);
+        at(runCycle, 6200);
+      };
+      runCycle();
+    });
+
+    return () => { entranceRef.current?.stop(); clearTimers(); };
+  }, [isActive]);
+
+  return (
+    <View style={vis.center}>
+      <View style={vis.playlistWrap}>
+        {VERSE_ITEMS.map((item, i) => {
+          const isMid = i === 1;
+          return (
+            <Animated.View key={i} style={[
+              vis.playlistRow,
+              isMid && vis.playlistRowActive,
+              {
+                opacity:   rowAnims[i],
+                transform: [{ translateX: rowAnims[i].interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
+              },
+            ]}>
+              <View style={vis.verseNumBadge}>
+                <Text style={[vis.verseNumText, isMid && { color: APP_PRIMARY }]}>{item.num}</Text>
+              </View>
+              <Text style={[vis.verseArabic, isMid && { color: TEXT_PRIMARY }]} numberOfLines={1}>
+                {item.arabic}
+              </Text>
+              {isMid ? (
+                <View style={vis.repeatControl}>
+                  <Animated.View style={[vis.repeatBtn, { transform: [{ scale: minusScale }] }]}>
+                    <Text style={vis.repeatBtnText}>−</Text>
+                  </Animated.View>
+                  <Animated.Text style={[vis.repeatCountNum, { transform: [{ scale: countScale }] }]}>
+                    {count}
+                  </Animated.Text>
+                  <Animated.View style={[vis.repeatBtn, vis.repeatBtnPlus, { transform: [{ scale: plusScale }] }]}>
+                    <Text style={[vis.repeatBtnText, { color: SURFACE }]}>+</Text>
+                  </Animated.View>
+                </View>
+              ) : (
+                <View style={vis.repeatPlaceholder}>
+                  <Text style={vis.repeatPlaceholderText}>×1</Text>
+                </View>
+              )}
+            </Animated.View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ─── Visual 5: Playlist — rows slide in, then cycle active playing item ────────
 
 const PLAYLIST_ITEMS = [
   { surah: 'Al-Fatiha',  range: 'Verses 1 – 7' },
@@ -452,8 +568,6 @@ function Visual4({ isActive }: VisualProps) {
     </View>
   );
 }
-
-// ─── Visual 5: Reciters cycling + live waveform per reciter ───────────────────
 
 const RECITER_IMAGES = [
   { img: require('../assets/reciters/mujawwad.png'), name: 'Abdul Basit' },
@@ -659,7 +773,7 @@ function Visual6({ isActive }: VisualProps) {
   );
 }
 
-const VISUALS = [Visual1, Visual2, Visual3, Visual4, Visual5, Visual6];
+const VISUALS = [Visual1, Visual2, Visual3, VisualRepeat, Visual4, Visual5, Visual6];
 
 // ─── Visual styles ────────────────────────────────────────────────────────────
 
@@ -818,7 +932,67 @@ const vis = StyleSheet.create({
     marginLeft: 2,
   },
 
-  // Fanned tilted cards (slide 5)
+  // Verse repeat (slide 4)
+  verseNumBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 7,
+    backgroundColor: `${APP_PRIMARY}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  verseNumText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: TEXT_MUTED,
+  },
+  verseArabic: {
+    flex: 1,
+    fontSize: 18,
+    color: TEXT_SECONDARY,
+    textAlign: 'right' as const,
+  },
+  repeatControl: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 7,
+    marginLeft: 14,
+  },
+  repeatBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: `${APP_PRIMARY}18`,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  repeatBtnPlus: {
+    backgroundColor: APP_PRIMARY,
+  },
+  repeatBtnText: {
+    fontSize: 18,
+    color: APP_PRIMARY,
+    lineHeight: 22,
+  },
+  repeatCountNum: {
+    fontSize: 17,
+    fontWeight: '700' as const,
+    color: APP_PRIMARY,
+    minWidth: 18,
+    textAlign: 'center' as const,
+  },
+  repeatPlaceholder: {
+    width: 74,
+    marginLeft: 14,
+    alignItems: 'flex-end' as const,
+  },
+  repeatPlaceholderText: {
+    fontSize: 13,
+    color: TEXT_MUTED,
+  },
+
+  // Fanned tilted cards (slide 6)
   tiltCard: {
     position: 'absolute',
     width: TILT_CARD_W,
