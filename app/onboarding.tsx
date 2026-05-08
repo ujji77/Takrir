@@ -1254,8 +1254,8 @@ export default function OnboardingScreen() {
   const isLast  = currentIndex === SLIDES.length - 1;
   const topPad  = insets.top;
   const slideH  = SH - topPad - BOTTOM_BAR_H - insets.bottom;
-  const visualH = slideH * 0.65;
-  const textH   = slideH * 0.35;
+  const visualH = slideH * 0.75;
+  const textH   = slideH * 0.25;
 
   const markSeen = () =>
     SecureStore.setItemAsync(ONBOARDING_KEY, 'true').catch(() => null);
