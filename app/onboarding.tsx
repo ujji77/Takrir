@@ -51,7 +51,7 @@ const SLIDES: Slide[] = [
   {
     id: '1',
     headline: 'What is Takrir?',
-    body: 'Takrir (تكرير) is the ancient practice of returning to Quranic verses again and again — until they settle in the heart.',
+    body: 'Takrir (تكرير) is the Arabic word for repetition. It is the ancient practice of returning to Quranic verses again and again — until they settle in the heart.',
     isFinal: false,
   },
   {
@@ -361,7 +361,7 @@ function Visual3({ isActive }: VisualProps) {
 const VERSE_ITEMS = [
   { key: '112:1', arabic: 'قُلۡ هُوَ ٱللَّهُ أَحَدٌ',    translation: 'Say: He is Allah, One'              },
   { key: '112:2', arabic: 'ٱللَّهُ ٱلصَّمَدُ',             translation: 'Allah, the Eternal Refuge'          },
-  { key: '112:3', arabic: 'لَمۡ يَلِدۡ وَلَمۡ يُولَدۡ',  translation: 'He neither begets nor is born'      },
+  { key: '112:3', arabic: 'لَمۡ يَلِدۡ وَلَمۡ يُولَدۡ',  translation: 'He has never had offspring, nor was He born.'      },
 ];
 
 function VisualRepeat({ isActive }: VisualProps) {
@@ -731,48 +731,127 @@ function Visual5({ isActive }: VisualProps) {
   );
 }
 
-// ─── Visual 6: Begin — icon breathes gently ───────────────────────────────────
+// ─── Visual 6: Begin — logo tile wall + breathing icon ────────────────────────
+
+// Tile grid constants — hexagonal brick layout
+const TILE_W    = 88;
+const TILE_H    = 110;
+const STEP_H    = 84;    // horizontal center-to-center spacing (tiles overlap)
+const STEP_V    = 92;    // vertical center-to-center spacing
+const T_ROWS    = 5;
+const EVEN_COLS = 5;
+const ODD_COLS  = 6;
+const TILE_BASE = 0.04;
+const TILE_PEAK = 0.12;
+const WAVE_HALF = 2.0;   // wave spread in diagonal units — wider = smoother crossfade
+
+type TileInfo = { x: number; y: number; diag: number; key: string };
+
+const TILE_GRID: TileInfo[] = (() => {
+  const tiles: TileInfo[] = [];
+  for (let row = 0; row < T_ROWS; row++) {
+    const isOdd  = row % 2 === 1;
+    const cols   = isOdd ? ODD_COLS : EVEN_COLS;
+    // Symmetric about screen centre; odd rows shift left by half a step (brick offset)
+    const startX = SW / 2 - ((cols - 1) / 2) * STEP_H;
+    const startY = 18 + row * STEP_V;
+    for (let col = 0; col < cols; col++) {
+      // Wave group: pairs of rows share the same step; bottom-left = 1, top-right = max
+      // r5/r4 → group = t, r3/r2 → group = t+1, r1 → group = t+2 (1-indexed)
+      const diag = (col + 1) + Math.floor((T_ROWS - 1 - row) / 2);
+      tiles.push({
+        x:   startX + col * STEP_H - TILE_W / 2,
+        y:   startY,
+        diag,
+        key: `${row}-${col}`,
+      });
+    }
+  }
+  return tiles;
+})();
 
 function Visual6({ isActive }: VisualProps) {
   const enterAnim  = useRef(new Animated.Value(0)).current;
   const breathAnim = useRef(new Animated.Value(1)).current;
+  const gridFade   = useRef(new Animated.Value(0)).current;
+  const waveAnim   = useRef(new Animated.Value(0)).current;
   const animRef    = useRef<Animated.CompositeAnimation | null>(null);
+  const waveRef    = useRef<Animated.CompositeAnimation | null>(null);
+
 
   useEffect(() => {
     if (!isActive) {
       animRef.current?.stop();
+      waveRef.current?.stop();
       enterAnim.setValue(0);
       breathAnim.setValue(1);
+      gridFade.setValue(0);
+      waveAnim.setValue(0);
       return;
     }
+
+    Animated.timing(gridFade, { toValue: 1, duration: 700, useNativeDriver: true }).start();
+
+    waveRef.current = Animated.loop(
+      // Sweep diags 1–7 in ~1.5s, then ~2s pause before repeat (total range 20 / 3500ms)
+      Animated.timing(waveAnim, { toValue: 20, duration: 3500, easing: Easing.linear, useNativeDriver: true })
+    );
+    waveRef.current.start();
+
     const breathe = Animated.loop(Animated.sequence([
       Animated.timing(breathAnim, { toValue: 1.045, duration: 1250, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
       Animated.timing(breathAnim, { toValue: 1,     duration: 1250, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
     ]));
     animRef.current = Animated.sequence([
+      Animated.delay(400),
       Animated.timing(enterAnim, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       breathe,
     ]);
     animRef.current.start();
-    return () => { animRef.current?.stop(); };
+
+    return () => { animRef.current?.stop(); waveRef.current?.stop(); };
   }, [isActive]);
 
   return (
     <View style={vis.center}>
+      {/* Tiled logo wall */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Animated.View style={{ flex: 1, opacity: gridFade }}>
+          {TILE_GRID.map(({ x, y, diag, key }) => {
+            // r3t3 hidden — keep its grid position but render nothing
+            if (key === '2-2') return null;
+            const tileOpacity = waveAnim.interpolate({
+              inputRange:  [diag - WAVE_HALF, diag, diag + WAVE_HALF, 20],
+              outputRange: [TILE_BASE, TILE_PEAK, TILE_BASE, TILE_BASE],
+              extrapolate: 'clamp',
+            });
+            return (
+              <Animated.View key={key} style={{
+                position: 'absolute', left: x, top: y,
+                width: TILE_W, height: TILE_H, opacity: tileOpacity,
+              }}>
+                <TakrirIcon width={TILE_W} height={TILE_H} />
+              </Animated.View>
+            );
+          })}
+        </Animated.View>
+      </View>
+
+      {/* Central logo */}
       <Animated.View style={{
         opacity: enterAnim,
-        transform: [{
-          scale: Animated.multiply(
-            enterAnim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] }),
-            breathAnim,
-          ),
-        }],
+        transform: [{ scale: Animated.multiply(
+          enterAnim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] }),
+          breathAnim,
+        )}],
       }}>
         <TakrirIcon width={96} height={128} />
       </Animated.View>
+
     </View>
   );
 }
+
 
 const VISUALS = [Visual1, Visual2, Visual3, VisualRepeat, Visual4, Visual5, Visual6];
 
