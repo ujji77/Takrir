@@ -1,6 +1,20 @@
 # Takrir — تكرير
 
-A Quran memorisation app for iOS. Pick a surah and verse range, set how many times each verse should repeat, and let it play. Built for focused, repetition-based memorisation.
+**Repetition. Memorisation.**
+
+Takrir is an iOS app for memorising the Quran through focused, repetition-based listening. Pick a surah and verse range, set how many times each verse should repeat, and let it play — with Arabic text, translation, and your choice of reciter on screen.
+
+Built at the Quran Foundation Hackathon organised by Provision Capital.
+
+[Download on the App Store](https://apps.apple.com/gb/app/takrir/id6761736803)
+
+---
+
+## Overview
+
+Most Quran audio apps are built for listening, not memorisation. Takrir fills that gap by giving you precise control over repetition: choose any chapter and verse range, assign different repeat counts to each verse, and play through the playlist with Arabic script and translation displayed in sync.
+
+The app connects to the [Quran Foundation API](https://api.quran.com/api/v4) for verse data, audio, and recitations. Sign in with your Quran.com account to sync preferences across devices, or use guest mode with no account required.
 
 ---
 
